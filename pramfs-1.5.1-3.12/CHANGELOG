@@ -1,0 +1,1206 @@
+commit 2bdb96d47a541d4baf1dfb744a02aa59cae48d4d
+Author: Vladimir Davydov <vdavydov@parallels.com>
+Date:   Sat Nov 16 15:28:36 2013 +0400
+
+    Porting to kernel 3.12
+    
+    Signed-off-by: Vladimir Davydov <vdavydov@parallels.com>
+
+commit 6d2154c4bfeaf8b796d18d2373d6b143289b63fc
+Author: Vladimir Davydov <vdavydov@parallels.com>
+Date:   Sat Nov 16 15:22:06 2013 +0400
+
+    Unlock inode while modifying flags in check_eof_blocks()
+    
+    Otherwise we can get an OOPS while writing a file on a protected mount.
+    
+    https://sourceforge.net/p/pramfs/bugs/15/
+    
+    Signed-off-by: Vladimir Davydov <vdavydov@parallels.com>
+
+commit acc76e5181350533b50bf6d2bb25da15e540c15e
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Tue Sep 10 18:52:59 2013 +0200
+
+    Removed the pramfs maintainer
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 0203aaaeedcc2046ef075a5188bf84c49aed46f5
+Author: Vladimir Davydov <vdavydov@parallels.com>
+Date:   Thu Aug 29 20:00:30 2013 +0400
+
+    Move xattr definitions to uapi header
+    
+    This is required by the userspace tool fsck.pramfs to check inode xattr
+    blocks.
+    
+    Signed-off-by: Vladimir Davydov <vdavydov@parallels.com>
+
+commit e83c3ee889ce1a9422de1275ccaa846cbfe6e37f
+Author: Vladimir Davydov <vdavydov@parallels.com>
+Date:   Thu Aug 29 19:59:42 2013 +0400
+
+    Move inode flag definitions to uapi header
+    
+    Inode flags are used by the userspace tool fsck.pramfs.
+    
+    Signed-off-by: Vladimir Davydov <vdavydov@parallels.com>
+
+commit 058b6f1fa2bca4ca80054b4f8b0aa17f50cf1cce
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Tue Aug 27 17:08:36 2013 +0200
+
+    Introduce uapi header
+    
+    This patch transforms pram_fs.h to be a uapi header, because it is
+    required by PRAM FS userspace tools.
+    
+    Signed-off-by: Vladimir Davydov <vdavydov@parallels.com>
+
+commit 41741f6891365e16d9b72bec00d0239392d3f9f7
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Tue Aug 27 17:04:49 2013 +0200
+
+    Fix include crc16.h -> crc32.h in pram.h
+    
+    This fixes a compilation issue introduced by commit 00e9fe
+    ("Replace crc16 with crc32")
+    
+    Signed-off-by: Vladimir Davydov <vdavydov@parallels.com>
+
+commit 5816cc6736d0f005ffdf78d4e126884cd1dd35ed
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Mon Aug 12 10:10:58 2013 +0200
+
+    Use ioremap_nocache when protection is turned on
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit f544d670533caf937bdf47a49fd7212f5b04f0c7
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Fri Aug 9 08:44:34 2013 +0200
+
+    Revert "Fix blocks not freed when temp file closed"
+    
+    This reverts commit 03d0d3b83a3b8211a004d2e18d1541fc00481421.
+    It has been fixed in mainline in a different way.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit aebbe9bc354961667b40fa44d5a9a146614ebe5b
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Wed Aug 7 17:31:59 2013 +0200
+
+    Grab link mutex in pram_readdir and inode_by_name (2)
+    
+    In pram_readdir and inode_by_name (called by lookup) we are under
+    i_mutex on the parent, but we are cycling over the child and we could
+    race with pram_remove_link.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit ce9c3e7b28c2863a40c7470fa1a1beca2bf424aa
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Wed Aug 7 17:29:59 2013 +0200
+
+    Partial revert "Replace crc16 with crc32"
+    
+    This partial reverts commit 00e9fe4cdae9b4d3c4beea9331a485d416b4086a.
+
+commit fc824a96434dd46e406a7c447fb2bed879e148ec
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Wed Aug 7 16:31:13 2013 +0200
+
+    Grab link mutex in pram_readdir and inode_by_name
+    
+    In pram_readdir and inode_by_name (called by lookup) we are under
+    i_mutex on the parent, but we are cycling over the child and we could
+    race with pram_remove_link.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 2c4bfbe88f2e580ddc637b7236efe419cead762b
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Wed Aug 7 16:20:29 2013 +0200
+
+    Replaced ioremap_nocache with ioremap
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 62889dd92d7dd7362feec95e279d71c309674539
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Wed Aug 7 16:18:40 2013 +0200
+
+    Removed temporary buffer in pram_direct_IO
+    
+    A temporary buffer is no more needed and we can remove a memcpy.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 00e9fe4cdae9b4d3c4beea9331a485d416b4086a
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Wed Aug 7 16:13:05 2013 +0200
+
+    Replace crc16 with crc32
+    
+    crc32 is faster than crc16 and we enough data in structs now to use
+    a bigger checksum.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 8bac92a97651a7e2967878dafad3ad89cd4e3452
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Mon Jul 29 18:30:40 2013 +0200
+
+    Added a new simple test for O_TMPFILE
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 03d0d3b83a3b8211a004d2e18d1541fc00481421
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Mon Jul 29 18:21:26 2013 +0200
+
+    Fix blocks not freed when temp file closed
+    
+    Blocks allocated with a temp file were not freed after the file
+    is closed due to i_mode value, it wasn't set with S_IFREG.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit c701cce32ebb4d18a014a31e1f0e848c02d3a8a3
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sat Jul 20 16:32:56 2013 +0200
+
+    Update for kernel 3.11
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit e643c6aa4755263628da785d50c1ddc28dcdba81
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sun Jul 7 17:15:14 2013 +0200
+
+    Clean inode retrival
+    
+    Fixed a couple of points where the inode reference was gotten in
+    a wrong way.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 9b3d5fa158b837a5ec18b8826f7c70320a1be63a
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sun Jul 7 17:10:04 2013 +0200
+
+    vfs: export lseek_execute() to modules
+    
+    For those file systems(btrfs/ext4/ocfs2/tmpfs/pramfs) that support SEEK_DATA
+    /SEEK_HOLE functions, we end up handling the similar matter in lseek_execute()
+    to update the current file offset to the desired offset if it is valid, ceph
+    also does the simliar things at ceph_llseek(). To reduce the duplications,
+    this patch make lseek_execute() public accessible so that we can call it
+    directly from the underlying file systems.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit a46c7ec0e6b23d0cbbdab777ed7dc7ef0cf42532
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sat Jul 20 16:32:11 2013 +0200
+
+    Added support for tmp file
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 100f0bb24035518d62e268b37c7cf2afcc399e9a
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sat Jul 20 16:31:00 2013 +0200
+
+    Changed ->readdir to ->iterate
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 67dffc62efba580242784e7979c0799a62a728e4
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sat Jun 22 12:13:39 2013 +0200
+
+    Decrease footprint when printk is disabled
+    
+    We reduce the size of object (~6%) when printk is disabled.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit f586e9d3ef5031d07d835e1aad21e3d2d8070bfe
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sat Jun 22 12:13:20 2013 +0200
+
+    Porting to kernel 3.10
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 80cc96564fdcd3c8421a49142706e3c4a37bc3a2
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sat Jun 22 12:12:11 2013 +0200
+
+    Fix typo in ACL
+    
+    Fix typo in ACL, there was a reference to ext2.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 837d1283d73422b27bf28b07c47e9dac094e08ab
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sat Jun 22 11:47:35 2013 +0200
+
+    Remove EXPERIMENTAL
+    
+    EXPERIMENTAL symbol is no more used inside Kconfig.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit ca35513bf4823572396991b9d3d6a8fccd03955a
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Fri May 24 18:08:47 2013 +0200
+
+    Use default time gran
+    
+    Use default time granularity, i.e. 1 second.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit eb6e9c742e671df4e568220c613243c422d6c752
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Fri May 24 18:07:03 2013 +0200
+
+    make_bad_inode called twice
+    
+    iget_failed() already calls make_bad_inode(), so it's not needed
+    to call it from pram_read_inode().
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit a61ba0b5fdcb7aaff3945a294e645e221924b50d
+Author: Ross Zwisler <ross.zwisler@linux.intel.com>
+Date:   Tue Apr 30 16:44:10 2013 -0600
+
+    Remove extra unlock from pram_remount()
+    
+    The locking in pram_remount() tightened up by commit
+    4d1fcc0f6ea9a9fc53959d6086e7b797995f47a5, but this commit failed to
+    remove an unlock in the error case that was no longer needed.
+    
+    Signed-off-by: Ross Zwisler <ross.zwisler@linux.intel.com>
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit ed503560405f3a86e96f37ae2d531092ff83069c
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sun Mar 31 10:28:27 2013 +0200
+
+    fs: Limit sys_mount to only request filesystem modules
+    
+    Alignment to kernel commit 7f78e0351394052e1a6293e175825eb5c7869507.
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 20a209af685307455f6898ba36d8c5ddb86d3436
+Author: Marco Stornelli <marco.stornelli@gmail.com>
+Date:   Sun Mar 31 10:22:02 2013 +0200
+
+    new_helper: file_inode(file)
+    
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 26aee71b8e929893cfb272f6401de99a43617c3f
+Author: Ross Zwisler <ross.zwisler@linux.intel.com>
+Date:   Sat Feb 16 10:03:24 2013 +0100
+
+    Updates for 3.7+ kernels, make sure we use bash
+    
+    The path to magic.h was changed between the 3.6 and 3.7 releases of the
+    kernel (commit 607ca46e97a1b6594b29647d98a32d545c24bdff).  Also, for
+    some distros (Ubuntu at least), /bin/sh points to dash and not bash.
+    Dash has a built-in version of echo which doesn't deal well with the -e
+    flag.
+    
+    Signed-off-by: Ross Zwisler <ross.zwisler@linux.intel.com>
+    Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+
+commit 54b25860dcfabb32d1dfa07a6a1f1d9cb87625e4
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Dec 9 13:10:51 2012 +0100
+
+    Change acl for user namespace (2)
+    
+    Convert pramfs to fully support the posix acl changes,
+    using e_uid e_gid instead e_id.
+
+commit 359b67f4b7320425c1ea3d22f38a41d7c49aabf7
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Dec 9 13:01:59 2012 +0100
+
+    Change acl for user namespace
+    
+    -  Pass the user namespace the uid and gid values in the xattr are stored
+       in into posix_acl_from_xattr.
+    
+     - Pass the user namespace kuid and kgid values should be converted into
+       when storing uid and gid values in an xattr in posix_acl_to_xattr.
+    
+    - Modify all callers of posix_acl_from_xattr and posix_acl_to_xattr to
+      pass in &init_user_ns.
+    
+    In the short term this change is not strictly needed but it makes the
+    code clearer.  In the longer term this change is necessary to be able to
+    mount filesystems outside of the initial user namespace that natively
+    store posix acls in the linux xattr format.
+
+commit 3e710c5c1a4e3860709622470be53b3fd89f1673
+Author: Hakan Lindqvist <Hakan.Lindqvist@enea.com>
+Date:   Mon Nov 19 15:58:19 2012 +0100
+
+    Fix CONFIG_PRAMFS_WRITE_PROTECT disabled prevents XIP
+    
+    When built with the option CONFIG_PRAMFS_WRITE_PROTECT disabled,
+    the mount parameter consistency check should not prevent the use
+    of XIP. Fix: Code dealing with the s_mount_opt PROTECT flag is
+    disabled in this build.
+
+commit 6774e351fcd47890801867fe2560956655c526ad
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Thu Nov 1 10:30:49 2012 +0100
+
+    Don't check for immutable/append inode for truncate
+    
+    Don't check for immutable/append inode in the truncate path. The
+    checks are already done before. Since pram_truncate_blocks is called
+    in the evict_inode() we could have a block-leak in case of append file.
+
+commit eba65f64834b818523cb9fce553fe1364e0c40f9
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Oct 6 13:40:28 2012 +0200
+
+    Push rcu_barrier() to fs level
+    
+    There's no reason to call rcu_barrier() on every
+    deactivate_locked_super().  We only need to make sure that all delayed rcu
+    free inodes are flushed before we destroy related cache.
+    
+    Removing rcu_barrier() from deactivate_locked_super() affects some fast
+    paths.  E.g.  on my machine exit_group() of a last process in IPC
+    namespace takes 0.07538s.  rcu_barrier() takes 0.05188s of that time.
+
+commit 5e6a3e1376e087e487ca7d3fba4976ab45b080c2
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Aug 26 16:52:33 2012 +0200
+
+    Added a new test to check ENOSPC behaviour
+
+commit 07d6280e50f9bff68c1af5f9f8faadac61e97944
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Aug 26 16:01:16 2012 +0200
+
+    Allocated blocks beyond end of file when ENOSPC occurs
+    
+    When we allocate new blocks but we have got the error ENOSPC,
+    the fs adds EOFBLOCKS for later recovery in truncate. The operation
+    is ok from fs point of view because when a truncate will happen then
+    the fs will erase all the blocks. However, it's not right from
+    user point of view because the file size will be unchanged but some
+    blocks will be allocated on that file. So, instead to trust in final
+    truncate, we avoid to set EOFBLOCKS and we call __pram_truncate_blocks
+    as allocation rollback.
+
+commit 4c3746b89794d6a074b97f1c216b45156d19d036
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Aug 24 10:00:57 2012 +0200
+
+    Updated documentation
+
+commit c94a1ee52b15ef6a46fae931744e4fc5f17536ff
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Mon Aug 20 09:31:51 2012 +0200
+
+    Removed writeable lock (2)
+    
+    Removed the extern reference of spin-lock.
+
+commit d69cc007529b464ef23750471f4448d19b8adcb0
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Aug 18 09:32:02 2012 +0200
+
+    Removed writeable lock
+    
+    Serialize the operation at fs level has got low efficency. We have
+    in each case an "open" window where something can happen, in addition
+    makes no sense to lock operation on different fs instance, so at
+    this point let the arch code to decide the lock policy and we
+    remove the spin lock. The operations in the fs are already protected
+    by several locks.
+
+commit 4d1fcc0f6ea9a9fc53959d6086e7b797995f47a5
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Aug 17 09:54:36 2012 +0200
+
+    Reduced critical section in pram_remount
+    
+    It's not needed to lock all the function, we need to serialize only
+    the super block access and modification.
+
+commit 341e4bc8a90d41dac9143693e0fd1aefacbead5e
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Wed Aug 15 11:08:20 2012 +0200
+
+    Don't pass nameidata to ->create (2)
+    
+    Replaced unsigned int with bool parameter.
+
+commit cdff7995a6538795114bf2441ef2aa8cf976cdd3
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Wed Aug 15 11:07:54 2012 +0200
+
+    Get rid of {lock|unlock}_super
+
+commit d74f020faea36e9c4d09a7024c13b2f6a67a9dd6
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Thu Aug 9 09:49:48 2012 +0200
+
+    Implement fs freezing
+    
+    Implement fs freezing according to new framework of kernel 3.6.
+
+commit 85b2de41262f2b3d7391ea9314a602532a13a904
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jul 28 09:32:00 2012 +0200
+
+    Don't expose I_NEW to inodes via dentry->d_inode
+    
+    d_instantiate(dentry, inode);
+    unlock_new_inode(inode);
+    
+    is a bad idea; do it the other way round...
+
+commit 5ef11465c7d87624cb94a33c857808743a436c35
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jul 28 09:29:11 2012 +0200
+
+    Don't pass nameidata to ->create
+    
+    Alignment for kernel 3.6
+
+commit 7797f921312dfe81597262dc733bb33e5e442d92
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jul 28 09:27:00 2012 +0200
+
+    Stop passing nameidata to ->lookup
+    
+    Alignment for kernel 3.6
+
+commit 31ddd4e207b0e44cca038dd1980407904caf07c4
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jun 2 16:28:41 2012 +0200
+
+    Added userns support
+    
+    In the kernel 3.5 the fs must manage the userns about uid and gid.
+
+commit e9757aa3de5e6f3dce07077b30c15aefd7a5b409
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jun 2 16:07:30 2012 +0200
+
+    Changed end_writeback into clear_inode
+    
+    Since kernel 3.5 the end_writeback() function was replaced by
+    clear_inode().
+
+commit c59abcb2b7ab2e6670ce36d4addc66317f537d42
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Apr 28 18:56:04 2012 +0200
+
+    Fix a crash on link/remove race - BUG 3524544
+    
+    Reported-by: Uchino Satoshi <satoshi.uchino@toshiba.co.jp>
+
+commit 16c733619ac2896499b6160f4f67c22355e79a09
+Author: UCHINO Satoshi <satoshi.uchino@toshiba.co.jp>
+Date:   Wed Apr 25 09:38:58 2012 +0200
+
+    Fix sparse warnings
+
+commit f7f79d3f49299dcd41221be6928a34d07cc070b1
+Author: UCHINO Satoshi <satoshi.uchino@toshiba.co.jp>
+Date:   Wed Apr 25 09:28:21 2012 +0200
+
+    Fix checkpatch warnings
+
+commit 5b2c73099fa85e85b0e7d99d0878715e562832c8
+Author: UCHINO Satoshi <satoshi.uchino@toshiba.co.jp>
+Date:   Wed Apr 25 09:14:38 2012 +0200
+
+    Fix checkpatch errors
+
+commit 20c3cdbeec1c389ff1af17aacac28ed7ae0d248b
+Author: UCHINO Satoshi <satoshi.uchino@toshiba.co.jp>
+Date:   Wed Apr 25 09:06:54 2012 +0200
+
+    Fix pramfs inode allocation bug
+    
+    Clear i_dtime of newly allocated pram_inode in pram_new_inode().
+    Witout this fix, i_dtime is never cleared so an active inode might be
+    treated as deleted wrongly.
+
+commit 543cae10a7de0e421a50e69077cdb1661a323b4c
+Author: UCHINO Satoshi <satoshi.uchino@toshiba.co.jp>
+Date:   Sun Apr 22 09:59:45 2012 +0200
+
+    Include ioport.h to fix build error on ARM
+    
+    The ioport.h is required for request_mem_region_exclusive, etc.
+
+commit 66df5133570b5f797dbf2b5a776e134f23795471
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Apr 6 13:52:15 2012 +0200
+
+    Aligned for kernel 3.4
+
+commit 2ce1a7b01ca2c6e166333fd6b3eb90187ded233b
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Apr 6 13:48:52 2012 +0200
+
+    Fixed compilation error for kernel 3.3
+
+commit c0b8d0e3f590e84a1aa8fb5e0efba19a72a03677
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Mar 11 10:31:06 2012 +0100
+
+    Aligned for kernel 3.3
+
+commit f993801df2ca5550d03a2d08fce37e54d69c34da
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Dec 9 10:59:53 2011 +0100
+
+    Fix up error handling for insert_inode_locked
+    
+    after 250df6ed274d767da844a5d9f05720b804240197
+    (fs: protect inode->i_state with inode->i_lock), insert_inode_locked()
+    no longer returns the inode with I_NEW set on failure.  However,
+    the error handler still calls unlock_new_inode() on failure,
+    which does a WARN_ON if I_NEW is not set, so any failure spews
+    a lot of warnings.
+
+commit d372da8454600ad1b4821fe9188d802a3c5c1b52
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Dec 4 12:01:26 2011 +0100
+
+    Fix orphan blocks when ENOSPC occurs
+    
+    If the ENOSPC occured during blocks allocation some blocks could be orphans
+    because the inode size and blocks counter weren't updated.
+    Removed a check in evict inode to call truncate even when i_blocks is zero,
+    pram_truncate_blocks will do the work. In addition, added the EOFBLOCKS
+    flag to the inode in case of error in the allocation path, to allow to
+    erase all in the truncate recovering "invisible" blocks.
+    
+    Reported-by: Zumeng Chen <zumeng.chen@gmail.com>
+
+commit f05419c890aaa3ac079a3c2846fd1f42ba070400
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Nov 19 15:06:02 2011 +0100
+
+    Used nlink helper
+    
+    Replaced direct manipulation of i_nlink with set_nlink, drop_nlink
+    and clear_nlink.
+
+commit e15995686bf914cfcc9c19d36b8f831975172f65
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Nov 6 16:49:38 2011 +0100
+
+    Fixed a typo in xattr_security.c
+
+commit e199b75b50d98676453c5550452608e7141c37d6
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Mon Oct 31 16:05:42 2011 +0100
+
+    Lockless lseek for SEEK_{CUR,SET,END}
+
+commit 80901bfbc08d50fdecc0ff91288d65a4a2e18963
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Oct 29 10:18:50 2011 +0200
+
+    Changed xattr security management for 3.2
+
+commit 7578e45104140b90f3c9e72e45573c84dc1212b4
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Oct 2 09:32:06 2011 +0200
+
+    Added lock protection during remount
+
+commit 5adf4a6d53f3f6dec294649f6fe0a9649a5bcc1e
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 24 09:36:14 2011 +0200
+
+    Changed fsx test
+
+commit c5d45e5f31a5ca50aeb28596bb1c793c92924563
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 24 09:35:45 2011 +0200
+
+    Fixed missed rcu_read_unlock in error path
+
+commit 11b29332138ab200682c3022b3ec50270abf131a
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 17 17:01:58 2011 +0200
+
+    Removed truncate mutex
+    
+    Replaced truncate mutex with rcu logic to have better scalability
+    and no lock contention between readers.
+
+commit 544e2d4e6b207b5dde625ac0e111edfe6fb1fb04
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 17 16:02:29 2011 +0200
+
+    Remove truncate mutex by pram_readpage
+    
+    Not needed to lock truncate_mutex because the sync point is
+    i_size_read. Even if pram_readpage read the size before the truncate
+    the page is locked so truncate_setsize will wait for it.
+
+commit 5ad6a7c4b255e3aea59d8c1c3a7b88ff100762dd
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Tue Sep 6 17:14:02 2011 +0200
+
+    Fixed a compilation error for kernel 3.1
+
+commit e9562a0d1032e04ba92f058ee3eae2e8407b7cc6
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Tue Sep 6 17:12:28 2011 +0200
+
+    Replaced GFP_KERNEL with GPF_NOFS after mutex changed policy
+
+commit 75c14ece04a2b8a314802ec6f8584f4dd2daf0fe
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Tue Sep 6 17:10:17 2011 +0200
+
+    Optimization for pram_setsize
+    
+    If the old and new size of an inode is the same, avoid to call other
+    functions but __pram_truncate_blocks to check for preallocate blocks.
+
+commit f02b9866350201959ac029f9ba88ec0ca9f26d67
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Tue Sep 6 17:06:26 2011 +0200
+
+    Fixed execute-in-place mmap
+    
+    Mmap didn't work at all with xip enabled because the pfn used was
+    wrong. Added the function pram_get_pfn.
+
+commit ffb57598156cb4e76b74aeb6c1e6c82a67fb8490
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Tue Sep 6 13:36:05 2011 +0200
+
+    Fix bitmap init for big endian archs
+    
+    bitmap_fill function uses host endian, but the bitmap block is
+    expected to be little endian, replaced bitmap_fill with the new
+    pram_bitmap_fill.
+
+commit 99acde4154ebd911671a17e8e3b73deaa6b0e3d3
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Sep 4 15:55:40 2011 +0200
+
+    Fixed a race condition in direct_IO path
+    
+    In the write path, direct_IO is under i_mutex, but no lock held in
+    the read path. A possible bug can happend because of the concurrency
+    problem of read and truncate.
+
+commit 92c65734e7a9f126bb92f1bd8ce4208f7144fb9a
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Sep 4 15:54:51 2011 +0200
+
+    Changed the user visible inode flags in ioctl
+
+commit d4ab17b671c9a795c0a15b87367afa7c53e5d889
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 3 17:25:37 2011 +0200
+
+    Fixed regressions
+    
+    1) First block to truncate was changed in a previous commit but it wasn't
+    correct
+    2) We need to truncate pages associated to the inode. Without this fix, it's
+    possible to read old data with this sequence: open a file, mmap, truncate,
+    close, open again, mmap again. Added a new test.
+    3) Not needed truncate mutex in pram_block_truncate_page
+
+commit 8b7574209f8636436a2e8d2c2f012f8d86c31aea
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 3 17:23:17 2011 +0200
+
+    Fixed the check for eof blocks flag
+    
+    Added a new test to verify the correct add/remove of the flag
+
+commit a7afa97c61944bd51dab6ed2882421794463468d
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 3 17:18:44 2011 +0200
+
+    Fixed fallocate errors
+    
+    1) Removed immutable check because it is already done in do_fallocate
+    2) Added check for fallocate operation on directory
+    3) The offset parameter is always from start of file
+
+commit ab3c515beb35926a930a5835afd8574fbb6b46dc
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Sep 3 17:17:07 2011 +0200
+
+    Check for eof blocks flag even if the writes doesn't extend the file
+
+commit c555d855ea5cb1fb14bf66cdb3e586c8e39d1961
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Aug 27 15:59:55 2011 +0200
+
+    Added cond_resched to improve preemption
+
+commit 1aca127ba71129fb6cb39db5850272f8d4cc6b5b
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Wed Aug 24 19:16:51 2011 +0200
+
+    Remove EOFBlocks flag when not needed anymore
+
+commit 2d8263cf0991a229d92da92f56031237a74480a6
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Wed Aug 24 18:45:44 2011 +0200
+
+    Added other test cases for SEEK_DATA/SEEK_HOLE management and
+    fixed an error in pram_find_region
+
+commit 64ea7ca6567d6383f863b701a40400c8619822ad
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Aug 21 16:45:38 2011 +0200
+
+    Removed not needed truncate_mutex from fallocate
+
+commit d1c6441737f3c2e4117e25e134f4515c83c59b13
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Aug 21 16:40:38 2011 +0200
+
+    Replaced pram_mmap with generic_file_readonly_mmap
+
+commit ef443aca7e2f2e7e483f72a1b8984a3de2fbeac1
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Aug 21 16:37:44 2011 +0200
+
+    Removed some comments
+
+commit e50815293851e4136aa95f88daccccf5718080b3
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Aug 21 16:22:34 2011 +0200
+
+    Micro-optimization for __pram_truncate_block
+
+commit 3a1c35491858028f613d04f9ddeeb493f1c9ff48
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Aug 21 16:18:09 2011 +0200
+
+    Management of SEEK_HOLE/SEEK_DATA
+    
+    Added the management of the new lseek option. Replace the old
+    management.
+    
+    Fixed an error in pram_truncate_block, the start and end blocks
+    used weren't always correct.
+    
+    Added a test for lseek.
+
+commit 9f3845effa083aa74910dc5bb3170ac029359484
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Aug 19 15:22:14 2011 +0200
+
+    Append and immutable flag no more inherited
+
+commit f3332d13a541d3868bed1f889c960a4bafc4591a
+Merge: 6d5a998 78c5526
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Mon Aug 8 15:21:05 2011 +0200
+
+    Merge branch 'master' of ssh://pramfs.git.sourceforge.net/gitroot/pramfs/pramfs
+
+commit 6d5a998ccad69f5a7ffeed590195bf9131c1ee24
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Mon Aug 8 15:05:44 2011 +0200
+
+    Added pram_llseek to manage SEEK_DATA/SEEK_HOLE
+
+commit 0ff902bf977a6a148aa86ea47bbca7286bffdd00
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Jul 29 11:42:47 2011 +0200
+
+    Changed ACL management for 3.1
+
+commit 78c5526d3f608f98b721a8cca1849e10f4f07028
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Jul 29 11:42:47 2011 +0200
+
+    Changed ACL management for 3.1
+
+commit 692e5d693678a4bef49f4efe1e396ccbfe9cdfbd
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Jul 29 11:12:50 2011 +0200
+
+    Fix return value of pram_lookup and changed according to new behaviour of d_splice_alias for linux 3.1
+
+commit d0404f4beab1cfcf3d2018b8b6bcb03622fe6ec2
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Fri Jul 29 10:58:18 2011 +0200
+
+    Move up a check and avoid to gain sem in case of error.
+
+commit 10c411f0acd6fe0ed9708157096eafe0c3f57302
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Jun 12 14:49:05 2011 +0200
+
+    Added MS_NOSEC flag to super block flags
+
+commit a8f55098885b8b25cbe4d5e65411df306548c65b
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun May 29 10:24:31 2011 +0200
+
+    Set NOSEC flag early when there are no xattrs
+
+commit c90a06f065bc4c3b668f149dada29a9e5ae3dcb2
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun May 29 10:11:13 2011 +0200
+
+    Add flags parameter to pram_dirty_inode
+
+commit 3b624f16318d98afdfd6fa5929bf7a22b1e41ea2
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun May 22 17:59:38 2011 +0200
+
+    Security modifications from final release of 2.6.39
+
+commit 9424b9ce94325485187b941ba24c32c63b873fc8
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Apr 16 09:52:08 2011 +0200
+
+    Replaced EACCES with EPERM in ioctl path
+
+commit 2d6ed3d0b52494481008219276ad275841aafb04
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Apr 2 12:09:09 2011 +0200
+
+    Porting for 2.6.39
+
+commit 58ee01bad6ec5091ed1ef0bc61c9e015abb0171d
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Mar 5 09:39:21 2011 +0100
+
+    Use drop_nlink
+
+commit 9dee87d675eae98276a295aca0c8f3eda242e742
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Thu Mar 3 12:34:49 2011 +0100
+
+    Fix pram_readpage error
+
+commit e8a7f7858b2af412afaffa57439d46fbb2800ddc
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Feb 19 16:48:45 2011 +0100
+
+    Added ltp-fsx test
+
+commit 9a818e0c9f98d99600d41d38ce95cf5afa3371f9
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Feb 19 16:44:44 2011 +0100
+
+    Fixed pram_clear_block error behaviour
+
+commit fad8a67723b62e28b4f706d8592b0bf2bdf2ce05
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Feb 6 15:58:57 2011 +0100
+
+    Reworked pram_readpage to remove block dependency
+
+commit c2062742f0cf80b94c9118b02fc19ef48effeb8f
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Feb 5 18:01:51 2011 +0100
+
+    Fixed double inode hashing in iget_locked path
+
+commit 7ec8c9d9f1b2e6854d0cd2351f070f3828a9ac78
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Feb 5 10:31:58 2011 +0100
+
+    Changed inode allocation flag
+
+commit e8a83b9d126cb151860bfb37c880d6e7871ed4f1
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Jan 30 20:55:59 2011 +0100
+
+    Used const in structs declaration
+
+commit c21530884ad0186f6f3d6fcd61c2c109f1d7babe
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sun Jan 30 20:47:55 2011 +0100
+
+    Added special inode operations
+
+commit 248407cbe659472e1d4107b9ee629e12425266ae
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jan 22 13:14:20 2011 +0100
+
+    All fs depends on block kconfig symbol
+
+commit 0d2f8cd67f066d9cb5e540eaed3598f942b62863
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jan 22 12:52:00 2011 +0100
+
+    Fix header file inclusion
+
+commit a6da0ef59f8ccd0d7be84cd6d5425b72519ef8d7
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jan 22 12:35:07 2011 +0100
+
+    Xip and Xattr depends on block option
+
+commit 8e41ba217d0e68c92f8a7d5a08befa29abe7d174
+Author: Marco <marco.stornelli@gmail.com>
+Date:   Sat Jan 22 12:34:33 2011 +0100
+
+    Fallocate now is a file operation
+
+commit e1f4e8597bf650af6ae6998fbfaae9489a38329a
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 22 12:09:24 2011 +0100
+
+    Removed patching of ACL comments in Kconfig
+
+commit 00357cb15b80ab92efe822a80ba927080905f4a0
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 15 12:54:48 2011 +0100
+
+    Added patching of maintainers file
+
+commit 2c580f05c491454662564e9f9459339f0c2d4036
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 15 12:39:28 2011 +0100
+
+    Removed not useful sync inode
+
+commit 5e06e0a90335ab6dde6cd969e5e94db30cfcbb1e
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 15 12:35:47 2011 +0100
+
+    Added auto repair of root inode
+
+commit ab824d4d80523a6e39a91848b112e84766558c11
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 15 11:59:03 2011 +0100
+
+    Build test module only when protection is compiled
+
+commit 8664871a8fa4a5c0cdd6a6198cf5f41c3809bca7
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 15 11:58:04 2011 +0100
+
+    Fixed checkpatch warnings
+
+commit 747c6622db258dbce84bc736a575b659483ecc61
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 15 11:36:13 2011 +0100
+
+    Added PRAM_SB macro and fixed truncate with same size  but with blocks allocate beyond eof
+
+commit b0c1696a0d32a5575fd44f487c53115bc9c1508b
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Fri Jan 14 19:32:54 2011 +0100
+
+    Changed fallocate test
+
+commit cfe427aee7bc3f348038f68651e452804cd6beba
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Fri Jan 14 19:28:49 2011 +0100
+
+    Copyright change
+
+commit 0d9fa48bd828f1b25edca1f209403f0b5aa37b23
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Fri Jan 14 19:19:51 2011 +0100
+
+    Added a check to manage FALLOC_FL_KEEP_SIZE mode only
+
+commit cbb1dc40cee55010ef1689a6e05f7ee49d5b28c4
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sun Jan 9 10:27:44 2011 +0100
+
+    Update docs
+
+commit 56df850664a5794cd4e1594b60112aa27d5ba0b6
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Jan 8 09:52:37 2011 +0100
+
+    Merge vfs-scale patch for 2.6.38
+
+commit a0ee4a76e5b992e389b2fe896056baad07efbe67
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Fri Jan 7 11:58:50 2011 +0100
+
+    Added patching of xip.txt
+
+commit 2ad2ccb32fb2159e552b4e2b6d4fd1859a2469c6
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Fri Jan 7 10:31:03 2011 +0100
+
+    Remove unnecesary unlikely in pram_lookup
+
+commit 7b6ae67a22a116a20f84a10531b41a627f8db31d
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Fri Jan 7 10:29:55 2011 +0100
+
+    Remove unnecesary while loop in pram_xattr_get
+
+commit 01839cb88d452bae2b74b819ed1dcc2db42d044b
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Thu Jan 6 12:12:24 2011 +0100
+
+    Added i_flags to inode
+
+commit 66e8df3f73768c468edf33ada0ba5fda3bed8c98
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sun Jan 2 16:50:46 2011 +0100
+
+    Modified test
+
+commit b1f82a3384c61706a834ca03b857f40ce116ebc0
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sun Jan 2 16:49:23 2011 +0100
+
+    Improved block allocation in direct IO path
+
+commit 3cdaae0f0d7b1f7b4445a0e45192fd17d3996e12
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sun Jan 2 12:56:59 2011 +0100
+
+    Fixed pram_iget return value management
+
+commit 51dad1d20a5f2556fc7fad4e813a1246d4041275
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Thu Dec 30 15:07:17 2010 +0100
+
+    Added support for splice system call
+
+commit eaf93be6946827a981639873e79af9f99fdd435d
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Wed Dec 29 17:42:34 2010 +0100
+
+    Added test suite
+
+commit 51406c32c0c8fc3550c5f760e490e0234fb6f53d
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Wed Dec 29 12:53:21 2010 +0100
+
+    Fix truncate lock usage and write inode return value
+
+commit 1b8d92852e7dd89c5b8e55f6421f18abb0a96ca1
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Wed Dec 29 11:19:03 2010 +0100
+
+    Added compat ioctl support
+
+commit 41000deef52baf3dda81bc91ebe12a0b600b3c51
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Wed Dec 29 11:12:29 2010 +0100
+
+    Improved management of inode flags
+
+commit 0873c47ee1e7e661ce4bee7ac470c82a4c369f29
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Wed Dec 29 11:11:08 2010 +0100
+
+    Inserted ioctl file operations
+
+commit 3b0ff5153c3d2ed4204e7c6460ba8c50c98dcedf
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Wed Dec 29 11:10:16 2010 +0100
+
+    Removed append-only test in fallocate
+
+commit 1d70522450a27b8be1206f9197b4c19f0f4232b9
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Tue Dec 28 17:02:34 2010 +0100
+
+    Added inode flags management and FALLOC_FL_KEEP_SIZE support
+
+commit 8868d72fc259b3922fa7b208f1f2317fe4486cad
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Mon Dec 27 09:41:47 2010 +0100
+
+    Added fallocate support
+
+commit 14cab920c9f50ae4beb223fbca809174568ee571
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Mon Dec 27 09:40:55 2010 +0100
+
+    Decreased stack usage in direct IO path
+
+commit 4ebb4b373665d85a5e1f403109e0c696c64d8e47
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Dec 25 12:33:50 2010 +0100
+
+    Fix makefile patching
+
+commit 58816b0fb712e2d19699113d772db748f645ef4d
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Dec 25 11:41:04 2010 +0100
+
+    Updated patch-ker.sh script
+
+commit c84a171b5cc8239c3f902f2794f2617b4fe05c69
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Dec 25 11:27:44 2010 +0100
+
+    Added pram_fs.h and pram_fs_sb.h
+
+commit 3b231dd60c600a2442d7c81975bcb2d1933eb9af
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Dec 25 11:24:28 2010 +0100
+
+    Add patching of magic.h
+
+commit 7d85e7ad686152869a1e44db02948a47a76a7dae
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Sat Dec 25 11:11:40 2010 +0100
+
+    Used less checking __copy_{from|to}_user functions
+
+commit 26047e1e3ade39961b53757a8d4498937aba0ab9
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Thu Dec 23 15:59:23 2010 +0100
+
+    Removed check about clear last block allocated
+
+commit d33d562f4e92846e39aaf3780eaa35c0fc1bb646
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Thu Dec 23 15:58:29 2010 +0100
+
+    Added support for readv/writev functions
+
+commit 99146476bc06c06ca1d9a1a6c20f0900b5500705
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Thu Dec 23 14:25:43 2010 +0100
+
+    Added arch Kconfig auto patching
+
+commit 876f8222bb922fbac7be819dabd8c62713dbb19a
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Wed Dec 22 18:40:53 2010 +0100
+
+    Fix bug number 3141759 and 3141762
+
+commit de3ceaf54d0f5b15986eb5cdde0a2b9087924a11
+Author: Marco <marco@ncc-1701-f.site>
+Date:   Tue Dec 21 20:14:41 2010 +0100
+
+    First commit
