@@ -12,7 +12,7 @@ Linux-3.12.49のソースコードをベースに高速不揮発性メモリ向�
 - [improved-pramfs](https://github.com/kohga/improved-pramfs)   
 
 ※ pramfsにジャーナリングシステムを実装予定   
-　（ジャーナリングはJBDを用いる）   
+ （ジャーナリングはJBDを用いる）   
 
 
 ## Reference  
