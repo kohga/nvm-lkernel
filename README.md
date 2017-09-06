@@ -1,18 +1,18 @@
 # NVM Kernel   
-(Non-Volatile Memory Based Kernel)   
+(Non-Volatile Memory Based Linux Kernel)   
 
 
 ## Summary   
-高速不揮発性メモリ向けOS (※現在開発途中)   
-Linux-3.12.49のソースコードをベースに高速不揮発性メモリ向けに改良したもの。   
+高速不揮発性メモリ向けLinux kernel (※現在開発途中)   
+Linux-3.12.49のソースコードをベースに高速不揮発性メモリ向けに改良。   
 
 
 ## Base File System   
 - [pramfs](http://pramfs.sourceforge.net)   
-- [pramfs-improved](https://github.com/kohga/pramfs-improved)   
+- [improved-pramfs](https://github.com/kohga/improved-pramfs)   
 
 ※ pramfsにジャーナリングシステムを実装予定   
-ジャーナリングはJBDを用いる   
+　（ジャーナリングはJBDを用いる）   
 
 
 ## Reference  
