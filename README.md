@@ -1,18 +1,38 @@
-# NVM Kernel   
-(Non-Volatile Memory Based Linux Kernel)   
+# NVM-LKernel   
+**Non-Volatile Memory Based Linux Kernel**   
 
 
 ## Summary   
-高速不揮発性メモリ向けLinux kernel (※現在開発途中)   
-Linux-3.12.49のソースコードをベースに高速不揮発性メモリ向けに改良   
+This project is a Linux Kernel for high-speed nonvolatile memory.   
+I have improved for high-speed nonvolatile memory based on Linux-3.12.66 source code.   
 
 
-## Base File System   
+## How to
+Build and Boot NVM-LKernel   
+```
+# ./do.sh   
+# reboot   
+```
+
+Boot NVM-LKernel   
+```
+# ./set_grub.sh nvm   
+# reboot   
+```
+
+Boot Default Linux Kernel   
+```
+# ./set_grub.sh default   
+# reboot   
+```
+
+
+## Original File System   
 - [pramfs](http://pramfs.sourceforge.net)   
-- [improved-pramfs](https://github.com/kohga/improved-pramfs)   
 
-※ pramfsにジャーナリングシステムを実装予定   
- （ジャーナリングはJBDを用いる）   
+
+## Improved File System   
+- [improved-pramfs](https://github.com/kohga/improved-pramfs)   
 
 
 ## Reference   
@@ -22,3 +42,9 @@ Linux-3.12.49のソースコードをベースに高速不揮発性メモリ向�
 
 - 高速不揮発性メモリ向けMmapにおける障害に対してアトミックな同期方式   
 >- <http://www.gakkai-web.net/gakkai/ieice/G_2017/Settings/ab/d_06_001.html>   
+
+
+## Beta Version
+[nvm-lkernel-beta](https://github.com/kohga/nvm-lkernel-beta)   
+
+
