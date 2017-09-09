@@ -40,13 +40,78 @@ static struct kmem_cache *pram_inode_cachep;
 
 #ifdef CONFIG_PRAMFS_TEST
 static void *first_pram_super;
-
 struct pram_super_block *get_pram_super(void)
 {
 	return (struct pram_super_block *)first_pram_super;
 }
 EXPORT_SYMBOL(get_pram_super);
 #endif
+
+/* kohga_hack (start) */
+/*
+ * Wrappers for journal_start/end.
+ */
+handle_t *pram_journal_start_sb(struct super_block *sb, int nblocks)
+{
+	journal_t *journal;
+
+	//if (sb->s_flags & MS_RDONLY)
+	//	return ERR_PTR(-EROFS);
+
+	/* Special case here: if the journal has aborted behind our
+	 * backs (eg. EIO in the commit thread), then we still need to
+	 * take the FS itself readonly cleanly. */
+/*
+	journal = EXT3_SB(sb)->s_journal;
+	if (is_journal_aborted(journal)) {
+		ext3_abort(sb, __func__,
+			   "Detected aborted journal");
+		return ERR_PTR(-EROFS);
+	}
+*/
+	return journal_start(journal, nblocks);
+}
+
+int __pram_journal_stop(const char *where, handle_t *handle)
+{
+	struct super_block *sb;
+	int err;
+	int rc;
+
+	sb = handle->h_transaction->t_journal->j_private;
+	err = handle->h_err;
+	rc = journal_stop(handle);
+
+	if (!err)
+		err = rc;
+	if (err)
+		//__pram_std_error(sb, where, err);
+	return err;
+}
+
+void pram_journal_abort_handle(const char *caller, const char *err_fn,
+		struct buffer_head *bh, handle_t *handle, int err)
+{
+	char nbuf[16];
+	//const char *errstr = pram_decode_error(NULL, err, nbuf);
+	const char *errstr = NULL;
+
+	if (bh)
+		BUFFER_TRACE(bh, "abort");
+
+	if (!handle->h_err)
+		handle->h_err = err;
+
+	if (is_handle_aborted(handle))
+		return;
+
+	printk(KERN_ERR "pram-fs: %s: aborting transaction: %s in %s\n",
+		caller, errstr, err_fn);
+
+	journal_abort_handle(handle);
+}
+
+/* kohga_hack (end) */
 
 void pram_error_mng(struct super_block *sb, const char *fmt, ...)
 {
@@ -503,6 +568,13 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	unsigned long blocksize, initsize = 0;
 	u32 random = 0;
 	int retval = -EINVAL;
+
+	// kohga_hack (start)
+	int nblocks=10;
+	handle_t *test;
+	test = pram_journal_start_sb(sb,nblocks);
+	printk(KERN_DEBUG "pram_journal_start_sb: %p \n",test);
+	// kohga_hack (end)
 
 	BUILD_BUG_ON(sizeof(struct pram_super_block) > PRAM_SB_SIZE);
 	BUILD_BUG_ON(sizeof(struct pram_inode) > PRAM_INODE_SIZE);

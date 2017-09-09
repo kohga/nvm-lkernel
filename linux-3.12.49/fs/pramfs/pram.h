@@ -20,6 +20,7 @@
 #include <linux/mutex.h>
 #include <linux/rcupdate.h>
 #include <linux/types.h>
+#include <linux/jbd.h>   // kohga_hack
 #include "wprotect.h"
 
 /*

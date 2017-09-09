@@ -3,7 +3,7 @@
 TARGET_DIR=linux-3.12.49
 NVM_DIR=/root/nvmlog
 DATE_DIR=/root/nvmlog/`date '+%Y%m%d'`
-LOG_TIME=`date '+%Y%m%d_%k:%M:%S'`
+LOG_TIME=`date '+%Y%m%d_%H:%M:%S'`
 SYSTEM=/boot/System.map-3.12.49
 CONFIG=/boot/config-3.12.49
 INITRD=/boot/initrd.img-3.12.49
