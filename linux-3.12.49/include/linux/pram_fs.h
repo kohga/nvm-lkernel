@@ -43,6 +43,20 @@ struct pram_sb_info {
 	spinlock_t desc_tree_lock;
 #endif
 	struct mutex s_lock;
+
+	/* Journaling */
+	struct inode * s_journal_inode;
+	struct journal_s * s_journal;
+	struct list_head s_orphan;
+	struct mutex s_orphan_lock;
+	struct mutex s_resize_lock;
+	unsigned long s_commit_interval;
+	struct block_device *journal_bdev;
+#ifdef CONFIG_QUOTA
+	char *s_qf_names[MAXQUOTAS];		/* Names of quota files with journalled quota */
+	int s_jquota_fmt;			/* Format of quota to use */
+#endif
+
 };
 
 #endif	/* _LINUX_PRAM_FS_H */

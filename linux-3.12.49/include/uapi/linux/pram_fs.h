@@ -117,7 +117,8 @@ struct pram_inode {
 	(PRAM_INODE_SIZE - offsetof(struct pram_inode, i_d.d_name) - 1)
 
 
-#define PRAM_SB_SIZE 128 /* must be power of two */
+//#define PRAM_SB_SIZE 128 /* must be power of two */
+#define PRAM_SB_SIZE 1024 /* must be power of two */
 
 /*
  * Structure of the super block in PRAMFS
@@ -138,6 +139,39 @@ struct pram_super_block {
 	__be32	s_wtime;	/* Write time */
 	__be16	s_magic;	/* Magic signature */
 	char	s_volume_name[16]; /* volume name */
+
+	/*
+	 * Journaling support valid if EXT3_FEATURE_COMPAT_HAS_JOURNAL set.
+	 */
+/*D0*/	__u8	s_journal_uuid[16];	/* uuid of journal superblock */
+/*E0*/	__le32	s_journal_inum;		/* inode number of journal file */
+	__le32	s_journal_dev;		/* device number of journal file */
+	__le32	s_last_orphan;		/* start of list of inodes to delete */
+	__le32	s_hash_seed[4];		/* HTREE hash seed */
+	__u8	s_def_hash_version;	/* Default hash version to use */
+	__u8	s_reserved_char_pad;
+	__u16	s_reserved_word_pad;
+	__le32	s_default_mount_opts;
+	__le32	s_first_meta_bg;	/* First metablock block group */
+	__le32	s_mkfs_time;		/* When the filesystem was created */
+	__le32	s_jnl_blocks[17];	/* Backup of the journal inode */
+	/* 64bit support valid if EXT4_FEATURE_COMPAT_64BIT */
+/*150*/	__le32	s_blocks_count_hi;
+	/* Blocks count */
+	__le32	s_r_blocks_count_hi;	/* Reserved blocks count */
+	__le32	s_free_blocks_count_hi;	/* Free blocks count */
+	__le16	s_min_extra_isize;	/* All inodes have at least # bytes */
+	__le16	s_want_extra_isize; 	/* New inodes should reserve # bytes */
+	__le32	s_flags;		/* Miscellaneous flags */
+	__le16  s_raid_stride;		/* RAID stride */
+	__le16  s_mmp_interval;         /* # seconds to wait in MMP checking */
+	__le64  s_mmp_block;            /* Block for multi-mount protection */
+	__le32  s_raid_stripe_width;    /* blocks on all data disks (N*stride)*/
+	__u8	s_log_groups_per_flex;  /* FLEX_BG group size */
+	__u8	s_reserved_char_pad2;
+	__le16  s_reserved_pad;
+	__u32   s_reserved[162];        /* Padding to the end of the block */
+
 };
 
 /* The root inode follows immediately after the redundant super block */

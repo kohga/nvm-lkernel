@@ -59,5 +59,9 @@ else
 fi
 
 end_time=`date +%s`
+
 time=$((end_time - start_time))
-echo "(do.sh) total time: ${time}"
+minute=${time}/60
+seconds=${time}-(${minute}*60)
+echo "(do.sh) total time: ${time}seconds"
+echo "(do.sh) total time: ${minute}m ${seconds}s"

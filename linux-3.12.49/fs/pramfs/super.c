@@ -410,6 +410,14 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 	struct pram_super_block *super;
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 
+	//kohga_hack
+	unsigned long jbd_area_start = size/2 + 1 ;
+	unsigned long jbd_area_end = size;
+	size = size/2;
+	pram_info("kohga;jbd_area_start = %lu\n", jbd_area_start);
+	pram_info("kohga;jbd_area_end = %lu\n", jbd_area_end);
+	//kohga_hack
+
 	pram_info("creating an empty pramfs of size %lu\n", size);
 	sbi->virt_addr = pram_ioremap(sbi->phys_addr, size,
 							pram_is_protected(sb));
@@ -569,11 +577,15 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	u32 random = 0;
 	int retval = -EINVAL;
 
+	unsigned long journal_inum = 0;
+	unsigned long journal_devnum = 0;
+
 	// kohga_hack (start)
 	int nblocks=10;
 	handle_t *test;
 	test = pram_journal_start_sb(sb,nblocks);
-	printk(KERN_DEBUG "pram_journal_start_sb: %p \n",test);
+	pram_info("kohga;pram_journal_start_sb: %p \n",test);
+	pram_info("kohga;pram_journal_start_sb: %x \n",test);
 	// kohga_hack (end)
 
 	BUILD_BUG_ON(sizeof(struct pram_super_block) > PRAM_SB_SIZE);
@@ -593,6 +605,7 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 #endif
 
 	sbi->phys_addr = get_phys_addr(&data);
+	pram_info("kohga;pram_fill_super: sbi->phys_addr = %x \n",sbi->phys_addr);
 	if (sbi->phys_addr == (phys_addr_t)ULLONG_MAX)
 		goto out;
 
@@ -628,7 +641,7 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 			goto out;
 
 		super = pram_get_super(sb);
-
+		pram_info("kohga;pram_fill_super: goto setup_sb\n");
 		goto setup_sb;
 	}
 
@@ -738,6 +751,7 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	retval = 0;
+	pram_info("kohga;pram_fill_super: return 0\n");
 	return retval;
  out:
 	if (sbi->virt_addr) {
