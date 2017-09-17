@@ -26,12 +26,14 @@ Boot Default Linux Kernel
 # reboot   
 ```
 
-Mount with Pramfs   
+Mount with PRAMFS   
+ex.
 ```
-# mount -t pramfs -o physaddr=0x100000000,init=3000M,bs=4096 none /mnt/pram
+# mount -t pramfs -o physaddr=0x100000000,init=100M,bs=1k none /mnt/pram
 ```
 
-Mount with Pramfs(XIP)   
+Mount with PRAMFS(XIP)   
+ex.
 ```
 # mount -t pramfs -o physaddr=0x100000000,init=2000M,bs=4096,xip none /mnt/pram
 ```
