@@ -586,6 +586,8 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	test = pram_journal_start_sb(sb,nblocks);
 	pram_info("kohga;pram_journal_start_sb: %p \n",test);
 	pram_info("kohga;pram_journal_start_sb: %x \n",test);
+	pram_info("kohga;sizeof(pram_super_block): %d \n",sizeof(struct pram_super_block));
+	pram_info("kohga;sizeof(pram_sb_info): %d \n",sizeof(struct pram_sb_info));
 	// kohga_hack (end)
 
 	BUILD_BUG_ON(sizeof(struct pram_super_block) > PRAM_SB_SIZE);
@@ -605,7 +607,6 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 #endif
 
 	sbi->phys_addr = get_phys_addr(&data);
-	pram_info("kohga;pram_fill_super: sbi->phys_addr = %x \n",sbi->phys_addr);
 	if (sbi->phys_addr == (phys_addr_t)ULLONG_MAX)
 		goto out;
 

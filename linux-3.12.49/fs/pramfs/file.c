@@ -24,6 +24,9 @@
 #include "xip.h"
 #include "xattr.h"
 
+#include <linux/buffer_head.h>
+#define VM_SHARED       0x00000008
+
 /*
  * The following functions are helper routines to copy to/from
  * user space and iter over io vectors (mainly for readv/writev).
@@ -162,6 +165,8 @@ ssize_t pram_direct_IO(int rw, struct kiocb *iocb,
 	unsigned int num_blocks;
 	size_t length = iov_length(iov, nr_segs);
 	loff_t size;
+
+	printk(KERN_DEBUG "pram_direct_IO\n");
 
 	/*
 	 * If we are in the write path we are under i_mutex but no lock held
@@ -371,13 +376,63 @@ loff_t pram_llseek(struct file *file, loff_t offset, int origin)
 	return offset;
 }
 
+//
+int pram_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+{
+        int ret = 0;
+        printk(KERN_DEBUG "pram_file_fault\n");
+        //vma->vm_flags &= ~VM_SHARED;
+        ret = filemap_fault(vma, vmf);
+        //printk(KERN_DEBUG ";%x \n",ret);
+        return ret;
+}
+
+int pram_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+{
+        int ret;
+        printk(KERN_DEBUG "pram_mkwrite\n");
+        ret = filemap_page_mkwrite(vma,vmf);
+        //printk(KERN_DEBUG ";%x \n",ret);
+        return ret;
+}
+
+int pram_remap(struct vm_area_struct *vma, unsigned long addr,
+                             unsigned long size, pgoff_t pgoff)
+{
+        int ret;
+        printk(KERN_DEBUG "pram_remap\n");
+        ret = generic_file_remap_pages(vma,addr,size,pgoff);
+        //printk(KERN_DEBUG ";%x \n",ret);
+        return ret;
+}
+
+static const struct vm_operations_struct pram_file_vm_ops = {
+        .fault  = pram_file_fault,
+        .page_mkwrite = pram_mkwrite,
+        .remap_pages = pram_remap,
+};
+
+int pram_file_mmap(struct file * file, struct vm_area_struct * vma)
+{
+        struct address_space *mapping = file->f_mapping;
+        printk(KERN_DEBUG "pram_file_mmap\n");
+
+        if (!mapping->a_ops->readpage)
+               return -ENOEXEC;
+        file_accessed(file);
+        vma->vm_ops = &pram_file_vm_ops;
+        return 0;
+}
+//
+
 const struct file_operations pram_file_operations = {
 	.llseek		= pram_llseek,
 	.read		= do_sync_read,
 	.write		= do_sync_write,
 	.aio_read	= generic_file_aio_read,
 	.aio_write	= generic_file_aio_write,
-	.mmap		= generic_file_readonly_mmap,
+//	.mmap		= generic_file_mmap,
+	.mmap		= pram_file_mmap,
 	.open		= pram_open_file,
 	.fsync		= noop_fsync,
 	.check_flags	= pram_check_flags,

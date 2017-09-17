@@ -26,6 +26,16 @@ Boot Default Linux Kernel
 # reboot   
 ```
 
+Mount with Pramfs   
+```
+# mount -t pramfs -o physaddr=0x100000000,init=3000M,bs=4096 none /mnt/pram
+```
+
+Mount with Pramfs(XIP)   
+```
+# mount -t pramfs -o physaddr=0x100000000,init=2000M,bs=4096,xip none /mnt/pram
+```
+
 
 ## File System   
 - [pramfs](http://pramfs.sourceforge.net)  (Original File System)   

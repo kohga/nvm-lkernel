@@ -47,6 +47,7 @@ static const struct vm_operations_struct pram_xip_vm_ops = {
 
 int pram_xip_file_mmap(struct file * file, struct vm_area_struct * vma)
 {
+	printk(KERN_DEBUG "kohga;pram_xip_file_mmap\n");
 	BUG_ON(!file->f_mapping->a_ops->get_xip_mem);
 
 	file_accessed(file);
