@@ -10,8 +10,6 @@
 #
 # Normal rules
 #
-tags
-linux-3.12.49/tags
 .*
 *.o
 *.o.*
