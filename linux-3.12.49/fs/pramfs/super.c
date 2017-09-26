@@ -410,14 +410,6 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 	struct pram_super_block *super;
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 
-	//kohga_hack
-	unsigned long jbd_area_start = size/2 + 1 ;
-	unsigned long jbd_area_end = size;
-	size = size/2;
-	pram_info("kohga;jbd_area_start = %lu\n", jbd_area_start);
-	pram_info("kohga;jbd_area_end = %lu\n", jbd_area_end);
-	//kohga_hack
-
 	pram_info("creating an empty pramfs of size %lu\n", size);
 	sbi->virt_addr = pram_ioremap(sbi->phys_addr, size,
 							pram_is_protected(sb));
@@ -532,6 +524,128 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 	return root_i;
 }
 
+static struct pram_inode *jbd_init(struct super_block *sb, unsigned long size)
+{
+	unsigned long bpi, num_inodes, bitmap_size, blocksize, num_blocks;
+	u64 bitmap_start;
+	struct pram_inode *root_i;
+	struct pram_super_block *super;
+	struct pram_sb_info *sbi = PRAM_SB(sb);
+
+	pram_info("kohga;JBD; creating an empty pramfs of size %lu\n", size);
+	sbi->jbd_virt_addr = pram_ioremap(sbi->jbd_phys_addr, size,
+							pram_is_protected(sb));
+
+	if (!sbi->jbd_virt_addr) {
+		printk(KERN_ERR "kohga;JBD; ioremap of the pramfs image failed\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+#ifdef CONFIG_PRAMFS_TEST
+	if (!first_pram_super)
+		first_pram_super = sbi->jbd_virt_addr;
+#endif
+
+	if (!sbi->blocksize)
+		blocksize = PRAM_DEF_BLOCK_SIZE;
+	else
+		blocksize = sbi->blocksize;
+
+	pram_set_blocksize(sb, blocksize);
+	blocksize = sb->s_blocksize;
+
+	if (sbi->blocksize && sbi->blocksize != blocksize)
+		sbi->blocksize = blocksize;
+
+	if (size < blocksize) {
+		printk(KERN_ERR "kohga;JBD; size smaller then block size\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+	if (!sbi->bpi)
+		/*
+		 * default is that 5% of the filesystem is
+		 * devoted to the inode table
+		 */
+		bpi = 20 * PRAM_INODE_SIZE;
+	else
+		bpi = sbi->bpi;
+
+	if (!sbi->num_inodes)
+		num_inodes = size / bpi;
+	else
+		num_inodes = sbi->num_inodes;
+
+	/*
+	 * up num_inodes such that the end of the inode table
+	 * (and start of bitmap) is on a block boundary
+	 */
+	bitmap_start = (PRAM_SB_SIZE*2) + (num_inodes<<PRAM_INODE_BITS);
+	if (bitmap_start & (blocksize - 1))
+		bitmap_start = (bitmap_start + blocksize) &
+			~(blocksize-1);
+	num_inodes = (bitmap_start - (PRAM_SB_SIZE*2)) >> PRAM_INODE_BITS;
+
+	if (sbi->num_inodes && num_inodes != sbi->num_inodes)
+		sbi->num_inodes = num_inodes;
+
+	num_blocks = (size - bitmap_start) >> sb->s_blocksize_bits;
+
+	if (!num_blocks) {
+		printk(KERN_ERR "kohga;JBD; num blocks equals to zero\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+	/* calc the data blocks in-use bitmap size in bytes */
+	if (num_blocks & 7)
+		bitmap_size = ((num_blocks + 8) & ~7) >> 3;
+	else
+		bitmap_size = num_blocks >> 3;
+	/* round it up to the nearest blocksize boundary */
+	if (bitmap_size & (blocksize - 1))
+		bitmap_size = (bitmap_size + blocksize) & ~(blocksize-1);
+
+	pram_info("kohga;JBD; blocksize %lu, num inodes %lu, num blocks %lu\n",
+		  blocksize, num_inodes, num_blocks);
+	pram_dbg("kohga;JBD; bitmap start 0x%08x, bitmap size %lu\n",
+		 (unsigned int)bitmap_start, bitmap_size);
+	pram_dbg("kohga;JBD; max name length %d\n", (unsigned int)PRAM_NAME_LEN);
+
+	super = pram_get_super(sb);
+	pram_memunlock_range(sb, super, bitmap_start + bitmap_size);
+
+	/* clear out super-block and inode table */
+	memset(super, 0, bitmap_start);
+	super->s_size = cpu_to_be64(size);
+	super->s_blocksize = cpu_to_be32(blocksize);
+	super->s_inodes_count = cpu_to_be32(num_inodes);
+	super->s_blocks_count = cpu_to_be32(num_blocks);
+	super->s_free_inodes_count = cpu_to_be32(num_inodes - 1);
+	super->s_bitmap_blocks = cpu_to_be32(bitmap_size >>
+							  sb->s_blocksize_bits);
+	super->s_free_blocks_count =
+		cpu_to_be32(num_blocks - be32_to_cpu(super->s_bitmap_blocks));
+	super->s_free_inode_hint = cpu_to_be32(1);
+	super->s_bitmap_start = cpu_to_be64(bitmap_start);
+	super->s_magic = cpu_to_be16(PRAM_SUPER_MAGIC);
+	pram_sync_super(super);
+
+	root_i = pram_get_inode(sb, PRAM_ROOT_INO);
+
+	root_i->i_mode = cpu_to_be16(sbi->mode | S_IFDIR);
+	root_i->i_uid = cpu_to_be32(sbi->uid.val);
+	root_i->i_gid = cpu_to_be32(sbi->gid.val);
+	root_i->i_links_count = cpu_to_be16(2);
+	root_i->i_d.d_parent = cpu_to_be64(PRAM_ROOT_INO);
+	pram_sync_inode(root_i);
+
+	pram_init_bitmap(sb);
+
+	pram_memlock_range(sb, super, bitmap_start + bitmap_size);
+
+	return root_i;
+}
+
 static inline void set_default_opts(struct pram_sb_info *sbi)
 {
 #ifdef CONFIG_PRAMFS_WRITE_PROTECT
@@ -576,19 +690,15 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	unsigned long blocksize, initsize = 0;
 	u32 random = 0;
 	int retval = -EINVAL;
+	struct pram_inode *jbd_pi;
+	struct inode *jbd_i = NULL;
 
 	unsigned long journal_inum = 0;
 	unsigned long journal_devnum = 0;
 
-	// kohga_hack (start)
-	int nblocks=10;
-	handle_t *test;
-	test = pram_journal_start_sb(sb,nblocks);
-	pram_info("kohga;pram_journal_start_sb: %p \n",test);
-	pram_info("kohga;pram_journal_start_sb: %x \n",test);
+	//kohga_hack
 	pram_info("kohga;sizeof(pram_super_block): %d \n",sizeof(struct pram_super_block));
 	pram_info("kohga;sizeof(pram_sb_info): %d \n",sizeof(struct pram_sb_info));
-	// kohga_hack (end)
 
 	BUILD_BUG_ON(sizeof(struct pram_super_block) > PRAM_SB_SIZE);
 	BUILD_BUG_ON(sizeof(struct pram_inode) > PRAM_INODE_SIZE);
@@ -607,6 +717,12 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 #endif
 
 	sbi->phys_addr = get_phys_addr(&data);
+
+	pram_info("kohga; sizeof(pram_sb_info): %p \n", (u64)sbi->phys_addr);
+	pram_info("kohga; sizeof(pram_sb_info): %llx \n", (u64)sbi->phys_addr);
+	pram_info("kohga; sizeof(pram_sb_info): %lld \n", (u64)sbi->phys_addr);
+	pram_info("kohga; checking physical address 0x%016llx for pramfs image\n",(u64)sbi->phys_addr);
+
 	if (sbi->phys_addr == (phys_addr_t)ULLONG_MAX)
 		goto out;
 
@@ -636,10 +752,32 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 
 	/* Init a new pramfs instance */
 	if (initsize) {
-		root_pi = pram_init(sb, initsize);
+
+		//kohga_hack
+		unsigned long pram_initsize = initsize/2;
+		unsigned long jbd_initsize = initsize/2;
+		unsigned long jbd_area_start = initsize/2 + 1 ;
+		unsigned long jbd_area_end = initsize;
+		pram_info("kohga;jbd_area_start = %lu\n", jbd_area_start);
+		pram_info("kohga;jbd_area_end = %lu\n", jbd_area_end);
+
+		root_pi = pram_init(sb, pram_initsize);
+
+		//kohga_hack
+		sbi->jbd_phys_addr = sbi->phys_addr;
+		pram_info("kohga; checking physical address 0x%016llx for pramfs image\n",(u64)sbi->jbd_phys_addr);
+		sbi->jbd_phys_addr += (u64)jbd_area_start;
+		pram_info("kohga; checking physical address 0x%016llx for pramfs image\n",(u64)sbi->jbd_phys_addr);
+
+		//jbd_pi = jbd_init(sb, jbd_initsize); //kohga_hack
 
 		if (IS_ERR(root_pi))
 			goto out;
+
+		//kohga_hack
+		//if (IS_ERR(jbd_pi)){
+		//	pram_info("kohga;jbd_pi: %x \n",jbd_pi);
+		//}
 
 		super = pram_get_super(sb);
 		pram_info("kohga;pram_fill_super: goto setup_sb\n");

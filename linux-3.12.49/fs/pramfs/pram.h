@@ -162,6 +162,11 @@ struct pram_inode_vfs {
 #endif
 	struct mutex i_meta_mutex;
 	struct mutex i_link_mutex;
+
+	//kohga hacked
+	atomic_t i_sync_tid;
+	atomic_t i_datasync_tid;
+
 	struct inode vfs_inode;
 };
 

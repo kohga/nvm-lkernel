@@ -40,6 +40,7 @@ PRAM_I	pram.h	/^static inline struct pram_inode_vfs *PRAM_I(struct inode *inode)
 PRAM_SB	pram.h	/^static inline struct pram_sb_info *PRAM_SB(struct super_block *sb)$/;"	f
 VALUE_HASH_SHIFT	xattr.c	1014;"	d	file:
 VALUE_HASH_SHIFT	xattr.c	1048;"	d	file:
+VM_SHARED	file.c	28;"	d	file:
 __PRAM_H	pram.h	15;"	d
 __WPROTECT_H	wprotect.h	13;"	d
 __insert_xblock_desc	desctree.c	/^static void __insert_xblock_desc(struct pram_sb_info *sbi,$/;"	f	file:
@@ -48,6 +49,12 @@ __pram_clear_user	file.c	/^static size_t __pram_clear_user(const struct iovec *i
 __pram_get_block	xip.c	/^static inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,$/;"	f	file:
 __pram_iov_copy_from	file.c	/^static size_t __pram_iov_copy_from(char *vaddr,$/;"	f	file:
 __pram_iov_copy_to	file.c	/^static size_t __pram_iov_copy_to(char *vaddr,$/;"	f	file:
+__pram_journal_dirty_metadata	pram_jbd.c	/^int __pram_journal_dirty_metadata(const char *where,$/;"	f
+__pram_journal_forget	pram_jbd.c	/^int __pram_journal_forget(const char *where, handle_t *handle,$/;"	f
+__pram_journal_get_create_access	pram_jbd.c	/^int __pram_journal_get_create_access(const char *where,$/;"	f
+__pram_journal_get_undo_access	pram_jbd.c	/^int __pram_journal_get_undo_access(const char *where, handle_t *handle,$/;"	f
+__pram_journal_get_write_access	pram_jbd.c	/^int __pram_journal_get_write_access(const char *where, handle_t *handle,$/;"	f
+__pram_journal_revoke	pram_jbd.c	/^int __pram_journal_revoke(const char *where, handle_t *handle,$/;"	f
 __pram_journal_stop	super.c	/^int __pram_journal_stop(const char *where, handle_t *handle)$/;"	f
 __pram_memlock_range	wprotect.h	/^static inline void __pram_memlock_range(void *p, unsigned long len)$/;"	f
 __pram_memunlock_range	wprotect.h	/^static inline void __pram_memunlock_range(void *p, unsigned long len)$/;"	f
@@ -86,6 +93,7 @@ init_pram_xattr	xattr.c	/^int __init init_pram_xattr(void)$/;"	f
 init_pram_xattr	xattr.h	/^init_pram_xattr(void)$/;"	f
 init_xblock_desc_once	xattr.c	/^static void init_xblock_desc_once(void *foo)$/;"	f	file:
 insert_xblock_desc	desctree.c	/^void insert_xblock_desc(struct pram_sb_info *sbi, struct pram_xblock_desc *desc)$/;"	f
+jbd_init	super.c	/^static struct pram_inode *jbd_init(struct super_block *sb, unsigned long size)$/;"	f	file:
 lock	desctree.h	/^	struct mutex lock;	\/* block lock *\/$/;"	m	struct:pram_xblock_desc	typeref:struct:pram_xblock_desc::mutex
 lookup_xblock_desc	desctree.c	/^struct pram_xblock_desc *lookup_xblock_desc(struct pram_sb_info *sbi,$/;"	f
 mapping_is_xip	xip.h	23;"	d
@@ -135,8 +143,11 @@ pram_export_ops	super.c	/^static const struct export_operations pram_export_ops;
 pram_fallocate	file.c	/^static long pram_fallocate(struct file *file, int mode, loff_t offset,$/;"	f	file:
 pram_fh_to_dentry	super.c	/^pram_fh_to_dentry(struct super_block *sb, struct fid *fid, int fh_len,$/;"	f	file:
 pram_fh_to_parent	super.c	/^pram_fh_to_parent(struct super_block *sb, struct fid *fid, int fh_len,$/;"	f	file:
+pram_file_fault	file.c	/^int pram_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)$/;"	f
 pram_file_inode_operations	file.c	/^const struct inode_operations pram_file_inode_operations = {$/;"	v	typeref:struct:inode_operations
+pram_file_mmap	file.c	/^int pram_file_mmap(struct file * file, struct vm_area_struct * vma)$/;"	f
 pram_file_operations	file.c	/^const struct file_operations pram_file_operations = {$/;"	v	typeref:struct:file_operations
+pram_file_vm_ops	file.c	/^static const struct vm_operations_struct pram_file_vm_ops = {$/;"	v	typeref:struct:vm_operations_struct	file:
 pram_fill_super	super.c	/^static int pram_fill_super(struct super_block *sb, void *data, int silent)$/;"	f	file:
 pram_find_and_alloc_blocks	xip.c	/^static int pram_find_and_alloc_blocks(struct inode *inode, sector_t iblock,$/;"	f	file:
 pram_find_data_block	inode.c	/^u64 pram_find_data_block(struct inode *inode, unsigned long file_blocknr)$/;"	f
@@ -183,6 +194,13 @@ pram_iov_copy_to	file.c	/^static size_t pram_iov_copy_to(void *from, struct iov_
 pram_is_protected	wprotect.h	/^static inline int pram_is_protected(struct super_block *sb)$/;"	f
 pram_is_protected	wprotect.h	118;"	d
 pram_journal_abort_handle	super.c	/^void pram_journal_abort_handle(const char *caller, const char *err_fn,$/;"	f
+pram_journal_dirty_metadata	pram.h	326;"	d
+pram_journal_forget	pram.h	328;"	d
+pram_journal_get_create_access	pram.h	324;"	d
+pram_journal_get_undo_access	pram.h	318;"	d
+pram_journal_get_write_access	pram.h	320;"	d
+pram_journal_release_buffer	pram.h	/^static inline void pram_journal_release_buffer(handle_t *handle,$/;"	f
+pram_journal_revoke	pram.h	322;"	d
 pram_journal_start_sb	super.c	/^handle_t *pram_journal_start_sb(struct super_block *sb, int nblocks)$/;"	f
 pram_link	namei.c	/^static int pram_link(struct dentry *dest_dentry, struct inode *dir,$/;"	f	file:
 pram_listxattr	xattr.c	/^ssize_t pram_listxattr(struct dentry *dentry, char *buffer, size_t size)$/;"	f
@@ -200,6 +218,7 @@ pram_memunlock_range	wprotect.h	/^static inline void pram_memunlock_range(struct
 pram_memunlock_super	wprotect.h	/^static inline void pram_memunlock_super(struct super_block *sb,$/;"	f
 pram_mkdir	namei.c	/^static int pram_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)$/;"	f	file:
 pram_mknod	namei.c	/^static int pram_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,$/;"	f	file:
+pram_mkwrite	file.c	/^int pram_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)$/;"	f
 pram_mount	super.c	/^static struct dentry *pram_mount(struct file_system_type *fs_type,$/;"	f	file:
 pram_new_block	balloc.c	/^int pram_new_block(struct super_block *sb, unsigned long *blocknr, int zero)$/;"	f
 pram_new_data_block	inode.c	/^static int pram_new_data_block(struct inode *inode, unsigned long *blocknr,$/;"	f	file:
@@ -213,6 +232,7 @@ pram_read_inode	inode.c	/^static int pram_read_inode(struct inode *inode, struct
 pram_readdir	dir.c	/^static int pram_readdir(struct file *file, struct dir_context *ctx)$/;"	f	file:
 pram_readlink	symlink.c	/^static int pram_readlink(struct dentry *dentry, char __user *buffer, int buflen)$/;"	f	file:
 pram_readpage	inode.c	/^static int pram_readpage(struct file *file, struct page *page)$/;"	f	file:
+pram_remap	file.c	/^int pram_remap(struct vm_area_struct *vma, unsigned long addr,$/;"	f
 pram_remount	super.c	/^int pram_remount(struct super_block *sb, int *mntflags, char *data)$/;"	f
 pram_remove_link	dir.c	/^int pram_remove_link(struct inode *inode)$/;"	f
 pram_rename	namei.c	/^static int pram_rename(struct inode  *old_dir,$/;"	f	file:
@@ -291,7 +311,7 @@ pram_xip_file_operations	file.c	/^const struct file_operations pram_xip_file_ope
 pram_xip_file_read	xip.c	/^ssize_t pram_xip_file_read(struct file *filp, char __user *buf,$/;"	f
 pram_xip_file_read	xip.h	30;"	d
 pram_xip_vm_ops	xip.c	/^static const struct vm_operations_struct pram_xip_vm_ops = {$/;"	v	typeref:struct:vm_operations_struct	file:
-pramfs-y	Makefile	/^pramfs-y := balloc.o dir.o file.o inode.o namei.o super.o symlink.o ioctl.o$/;"	m
+pramfs-y	Makefile	/^pramfs-y := balloc.o dir.o file.o inode.o namei.o super.o symlink.o ioctl.o pram_jbd.o$/;"	m
 put_xblock_desc	desctree.c	/^int put_xblock_desc(struct pram_sb_info *sbi, struct pram_xblock_desc *desc)$/;"	f
 refcount	desctree.h	/^	atomic_t refcount;	\/* users count of this descriptor *\/$/;"	m	struct:pram_xblock_desc
 set_default_opts	super.c	/^static inline void set_default_opts(struct pram_sb_info *sbi)$/;"	f	file:

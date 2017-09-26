@@ -45,6 +45,8 @@ struct pram_sb_info {
 	struct mutex s_lock;
 
 	/* Journaling */
+	phys_addr_t jbd_phys_addr;
+	void *jbd_virt_addr;
 	struct inode * s_journal_inode;
 	struct journal_s * s_journal;
 	struct list_head s_orphan;

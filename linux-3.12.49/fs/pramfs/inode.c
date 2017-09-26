@@ -525,6 +525,11 @@ struct inode *pram_iget(struct super_block *sb, unsigned long ino)
 	struct pram_inode *pi;
 	int err;
 
+	//kohga hacked
+	struct pram_inode_vfs *pi_vfs;
+	journal_t *journal = PRAM_SB(sb)->s_journal;
+	transaction_t *transaction;
+
 	inode = iget_locked(sb, ino);
 	if (unlikely(!inode))
 		return ERR_PTR(-ENOMEM);
@@ -539,6 +544,29 @@ struct inode *pram_iget(struct super_block *sb, unsigned long ino)
 	err = pram_read_inode(inode, pi);
 	if (unlikely(err))
 		goto fail;
+
+	//kohga hacked
+	pi_vfs = PRAM_I(inode);
+	if (journal) {
+		tid_t tid;
+
+		spin_lock(&journal->j_state_lock);
+
+		if (journal->j_running_transaction)
+			transaction = journal->j_running_transaction;
+		else
+			transaction = journal->j_committing_transaction;
+
+		if (transaction)
+			tid = transaction->t_tid;
+		else
+			tid = journal->j_commit_sequence;
+
+		spin_unlock(&journal->j_state_lock);
+
+		atomic_set(&pi_vfs->i_sync_tid, tid);
+		atomic_set(&pi_vfs->i_datasync_tid, tid);
+	}
 
 	unlock_new_inode(inode);
 	return inode;
