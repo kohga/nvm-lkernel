@@ -10,6 +10,7 @@
 #
 # Normal rules
 #
+tags
 .*
 *.o
 *.o.*

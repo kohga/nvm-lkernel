@@ -48,6 +48,66 @@ EXPORT_SYMBOL(get_pram_super);
 #endif
 
 /* kohga_hack (start) */
+
+void pram_msg(struct super_block *sb, const char *prefix, const char *fmt, ...)
+{
+	struct va_format vaf;
+	va_list args;
+
+	va_start(args, fmt);
+
+	vaf.fmt = fmt;
+	vaf.va = &args;
+
+	printk("kohga; %sPRAM-fs (%s): %pV\n", prefix, sb->s_id, &vaf);
+
+	va_end(args);
+}
+
+/*
+ * pram_abort is a much stronger failure handler than pram_error.  The
+ * abort function may be used to deal with unrecoverable failures such
+ * as journal IO errors or ENOMEM at a critical moment in log management.
+ *
+ * We unconditionally force the filesystem into an ABORT|READONLY state,
+ * unless the error response on the fs has been set to panic in which
+ * case we take the easy way out and panic immediately.
+ */
+void pram_abort(struct super_block *sb, const char *function,
+		const char *fmt, ...)
+{
+	struct va_format vaf;
+	va_list args;
+
+	va_start(args, fmt);
+
+	vaf.fmt = fmt;
+	vaf.va = &args;
+
+	printk(KERN_CRIT "kohga; PRAM-fs (%s): error: %s: %pV\n",sb->s_id, function, &vaf);
+
+	va_end(args);
+
+	if (test_opt(sb, ERRORS_PANIC))
+		panic("kohga; PRAM-fs: panic from previous error\n");
+
+	if (sb->s_flags & MS_RDONLY)
+		return;
+
+	pram_msg(sb, KERN_CRIT,"kohga; error: remounting filesystem read-only");
+	PRAM_SB(sb)->s_mount_state |= PRAM_ERRORS_KOHGA;
+	set_opt(PRAM_SB(sb)->s_mount_opt, ABORT);
+	/*
+	 * Make sure updated value of ->s_mount_state will be visible
+	 * before ->s_flags update.
+	 */
+	smp_wmb();
+	sb->s_flags |= MS_RDONLY;
+
+	if (PRAM_SB(sb)->s_journal)
+		journal_abort(PRAM_SB(sb)->s_journal, -EIO);
+}
+
 /*
  * Wrappers for journal_start/end.
  */
@@ -55,20 +115,20 @@ handle_t *pram_journal_start_sb(struct super_block *sb, int nblocks)
 {
 	journal_t *journal;
 
-	//if (sb->s_flags & MS_RDONLY)
-	//	return ERR_PTR(-EROFS);
+	if (sb->s_flags & MS_RDONLY)
+		return ERR_PTR(-EROFS);
 
 	/* Special case here: if the journal has aborted behind our
 	 * backs (eg. EIO in the commit thread), then we still need to
 	 * take the FS itself readonly cleanly. */
-/*
-	journal = EXT3_SB(sb)->s_journal;
+
+	journal = PRAM_SB(sb)->s_journal;
 	if (is_journal_aborted(journal)) {
-		ext3_abort(sb, __func__,
-			   "Detected aborted journal");
+		pram_info("kohga; is_journal_aborted\n");
+		pram_abort(sb, __func__,"Detected aborted journal");
 		return ERR_PTR(-EROFS);
 	}
-*/
+
 	return journal_start(journal, nblocks);
 }
 
@@ -82,10 +142,15 @@ int __pram_journal_stop(const char *where, handle_t *handle)
 	err = handle->h_err;
 	rc = journal_stop(handle);
 
-	if (!err)
+	if (!err){
 		err = rc;
-	if (err)
+	}
+
+	if (err){
+		pram_info("kohga; is_journal_aborted\n");
 		//__pram_std_error(sb, where, err);
+	}
+
 	return err;
 }
 
@@ -105,7 +170,7 @@ void pram_journal_abort_handle(const char *caller, const char *err_fn,
 	if (is_handle_aborted(handle))
 		return;
 
-	printk(KERN_ERR "pram-fs: %s: aborting transaction: %s in %s\n",
+	printk(KERN_ERR "kohga; pram-fs: %s: aborting transaction: %s in %s\n",
 		caller, errstr, err_fn);
 
 	journal_abort_handle(handle);

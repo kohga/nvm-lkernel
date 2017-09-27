@@ -84,8 +84,10 @@ flags	desctree.h	/^	unsigned long flags;	\/* descriptor flags *\/$/;"	m	struct:p
 get_phys_addr	super.c	/^static phys_addr_t get_phys_addr(void **data)$/;"	f	file:
 get_pram_super	super.c	/^EXPORT_SYMBOL(get_pram_super);$/;"	v
 get_pram_super	super.c	/^struct pram_super_block *get_pram_super(void)$/;"	f
+i_datasync_tid	pram.h	/^	atomic_t i_datasync_tid;$/;"	m	struct:pram_inode_vfs
 i_link_mutex	pram.h	/^	struct mutex i_link_mutex;$/;"	m	struct:pram_inode_vfs	typeref:struct:pram_inode_vfs::mutex
 i_meta_mutex	pram.h	/^	struct mutex i_meta_mutex;$/;"	m	struct:pram_inode_vfs	typeref:struct:pram_inode_vfs::mutex
+i_sync_tid	pram.h	/^	atomic_t i_sync_tid;$/;"	m	struct:pram_inode_vfs
 init_inodecache	super.c	/^static int __init init_inodecache(void)$/;"	f	file:
 init_once	super.c	/^static void init_once(void *foo)$/;"	f	file:
 init_pram_fs	super.c	/^static int __init init_pram_fs(void)$/;"	f	file:
@@ -102,6 +104,7 @@ mark_free_desc	desctree.c	/^void mark_free_desc(struct pram_xblock_desc *desc)$/
 node	desctree.h	/^	struct rb_node node;	\/* node in the rb tree *\/$/;"	m	struct:pram_xblock_desc	typeref:struct:pram_xblock_desc::rb_node
 pr_fmt	pram.h	30;"	d
 pr_fmt	pram.h	31;"	d
+pram_abort	super.c	/^void pram_abort(struct super_block *sb, const char *function,$/;"	f
 pram_acl_chmod	acl.c	/^int pram_acl_chmod(struct inode *inode)$/;"	f
 pram_acl_chmod	acl.h	/^static inline int pram_acl_chmod(struct inode *inode)$/;"	f
 pram_acl_count	acl.h	/^static inline int pram_acl_count(size_t size)$/;"	f
@@ -194,13 +197,13 @@ pram_iov_copy_to	file.c	/^static size_t pram_iov_copy_to(void *from, struct iov_
 pram_is_protected	wprotect.h	/^static inline int pram_is_protected(struct super_block *sb)$/;"	f
 pram_is_protected	wprotect.h	118;"	d
 pram_journal_abort_handle	super.c	/^void pram_journal_abort_handle(const char *caller, const char *err_fn,$/;"	f
-pram_journal_dirty_metadata	pram.h	326;"	d
-pram_journal_forget	pram.h	328;"	d
-pram_journal_get_create_access	pram.h	324;"	d
-pram_journal_get_undo_access	pram.h	318;"	d
-pram_journal_get_write_access	pram.h	320;"	d
+pram_journal_dirty_metadata	pram.h	331;"	d
+pram_journal_forget	pram.h	333;"	d
+pram_journal_get_create_access	pram.h	329;"	d
+pram_journal_get_undo_access	pram.h	323;"	d
+pram_journal_get_write_access	pram.h	325;"	d
 pram_journal_release_buffer	pram.h	/^static inline void pram_journal_release_buffer(handle_t *handle,$/;"	f
-pram_journal_revoke	pram.h	322;"	d
+pram_journal_revoke	pram.h	327;"	d
 pram_journal_start_sb	super.c	/^handle_t *pram_journal_start_sb(struct super_block *sb, int nblocks)$/;"	f
 pram_link	namei.c	/^static int pram_link(struct dentry *dest_dentry, struct inode *dir,$/;"	f	file:
 pram_listxattr	xattr.c	/^ssize_t pram_listxattr(struct dentry *dentry, char *buffer, size_t size)$/;"	f
@@ -220,6 +223,7 @@ pram_mkdir	namei.c	/^static int pram_mkdir(struct inode *dir, struct dentry *den
 pram_mknod	namei.c	/^static int pram_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,$/;"	f	file:
 pram_mkwrite	file.c	/^int pram_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)$/;"	f
 pram_mount	super.c	/^static struct dentry *pram_mount(struct file_system_type *fs_type,$/;"	f	file:
+pram_msg	super.c	/^void pram_msg(struct super_block *sb, const char *prefix, const char *fmt, ...)$/;"	f
 pram_new_block	balloc.c	/^int pram_new_block(struct super_block *sb, unsigned long *blocknr, int zero)$/;"	f
 pram_new_data_block	inode.c	/^static int pram_new_data_block(struct inode *inode, unsigned long *blocknr,$/;"	f	file:
 pram_new_inode	inode.c	/^struct inode *pram_new_inode(struct inode *dir, umode_t mode,$/;"	f

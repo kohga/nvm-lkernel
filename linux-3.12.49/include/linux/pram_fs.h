@@ -34,6 +34,7 @@ struct pram_sb_info {
 	unsigned long blocksize;
 	unsigned long initsize;
 	unsigned long s_mount_opt;
+	unsigned long s_mount_state;
 	kuid_t uid;		    /* Mount uid for root directory */
 	kgid_t gid;		    /* Mount gid for root directory */
 	umode_t mode;		    /* Mount mode for root directory */
