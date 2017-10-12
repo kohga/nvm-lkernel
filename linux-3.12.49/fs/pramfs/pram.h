@@ -23,6 +23,10 @@
 #include <linux/jbd.h>   // kohga_hack
 #include "wprotect.h"
 
+#define KOHGA_PRAM_IGET 0x00000001
+extern unsigned long kohga_pram_flag;
+
+
 /*
  * Debug code
  */

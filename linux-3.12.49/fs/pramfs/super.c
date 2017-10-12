@@ -176,6 +176,125 @@ void pram_journal_abort_handle(const char *caller, const char *err_fn,
 	journal_abort_handle(handle);
 }
 
+/*
+ * Setup any per-fs journal parameters now.  We'll do this both on
+ * initial mount, once the journal has been initialised but before we've
+ * done any recovery; and again on any subsequent remount.
+ */
+static void pram_init_journal_params(struct super_block *sb, journal_t *journal)
+{
+	struct pram_sb_info *sbi = PRAM_SB(sb);
+
+	if (sbi->s_commit_interval)
+		journal->j_commit_interval = sbi->s_commit_interval;
+	/* We could also set up an pram-specific default for the commit
+	 * interval here, but for now we'll just fall back to the jbd
+	 * default. */
+
+	spin_lock(&journal->j_state_lock);
+	if (test_opt(sb, BARRIER))
+		journal->j_flags |= JFS_BARRIER;
+	else
+		journal->j_flags &= ~JFS_BARRIER;
+	if (test_opt(sb, DATA_ERR_ABORT))
+		journal->j_flags |= JFS_ABORT_ON_SYNCDATA_ERR;
+	else
+		journal->j_flags &= ~JFS_ABORT_ON_SYNCDATA_ERR;
+	spin_unlock(&journal->j_state_lock);
+}
+
+static journal_t *pram_get_journal(struct super_block *sb,
+				   unsigned int journal_inum)
+{
+	struct inode *journal_inode;
+	journal_t *journal;
+
+	/* First, test for the existence of a valid inode on disk.  Bad
+	 * things happen if we iget() an unused inode, as the subsequent
+	 * iput() will try to delete it. */
+
+	pram_info("kohga; pram_get_journal; 1\n");
+	journal_inode = pram_iget(sb, journal_inum);
+	if (IS_ERR(journal_inode)) {
+		pram_msg(sb, KERN_ERR, "error: no journal found");
+		return NULL;
+	}
+	if (!journal_inode->i_nlink) {
+		make_bad_inode(journal_inode);
+		iput(journal_inode);
+		pram_msg(sb, KERN_ERR, "error: journal inode is deleted");
+		return NULL;
+	}
+
+	jbd_debug(2, "Journal inode found at %p: %Ld bytes\n",
+		  journal_inode, journal_inode->i_size);
+	if (!S_ISREG(journal_inode->i_mode)) {
+		pram_msg(sb, KERN_ERR, "error: invalid journal inode");
+		iput(journal_inode);
+		return NULL;
+	}
+
+	pram_info("kohga; pram_get_journal; 2\n");
+	journal = journal_init_inode(journal_inode);
+	if (!journal) {
+		pram_msg(sb, KERN_ERR, "error: could not load journal inode");
+		iput(journal_inode);
+		return NULL;
+	}
+	journal->j_private = sb;
+	pram_info("kohga; pram_get_journal; 3\n");
+	pram_init_journal_params(sb, journal);
+	return journal;
+}
+
+static int pram_create_journal(struct super_block *sb,
+			       struct pram_super_block *ps,
+			       unsigned int journal_inum)
+{
+	journal_t *journal;
+	int err;
+
+	if (sb->s_flags & MS_RDONLY) {
+		pram_msg(sb, KERN_ERR,
+			"error: readonly filesystem when trying to "
+			"create journal");
+		pram_info("kohga; pram_create_journal; -EROFS\n");
+		return -EROFS;
+	}
+
+	pram_info("kohga; pram_create_journal; 1\n");
+	journal = pram_get_journal(sb, journal_inum);
+	if (!journal){
+		pram_info("kohga; pram_create_journal; -EINVAL\n");
+		return -EINVAL;
+	}
+
+	pram_msg(sb, KERN_INFO, "creating new journal on inode %u",
+	       journal_inum);
+
+	pram_info("kohga; 3\n");
+	err = journal_create(journal);
+	if (err) {
+		pram_msg(sb, KERN_ERR, "error creating journal");
+		journal_destroy(journal);
+		pram_info("kohga; pram_create_journal; -EIO\n");
+		return -EIO;
+	}
+
+	PRAM_SB(sb)->s_journal = journal;
+
+	//ext3_update_dynamic_rev(sb);
+	//EXT3_SET_INCOMPAT_FEATURE(sb, EXT3_FEATURE_INCOMPAT_RECOVER);
+	//EXT3_SET_COMPAT_FEATURE(sb, EXT3_FEATURE_COMPAT_HAS_JOURNAL);
+
+	ps->s_journal_inum = cpu_to_le32(journal_inum);
+
+	/* Make sure we flush the recovery flag to disk. */
+	//pram_commit_super(sb, ps, 1);   // xipだからいらない？？
+	pram_info("kohga; pram_create_journal; success!\n");
+	return 0;
+}
+
 /* kohga_hack (end) */
 
 void pram_error_mng(struct super_block *sb, const char *fmt, ...)
@@ -254,6 +373,7 @@ enum {
 	Opt_gid, Opt_blocksize, Opt_user_xattr,
 	Opt_nouser_xattr, Opt_noprotect,
 	Opt_acl, Opt_noacl, Opt_xip,
+	Opt_kohga_noinit,
 	Opt_err_cont, Opt_err_panic, Opt_err_ro,
 	Opt_err
 };
@@ -273,6 +393,7 @@ static const match_table_t tokens = {
 	{Opt_acl,		"acl"},
 	{Opt_acl,		"noacl"},
 	{Opt_xip,		"xip"},
+	{Opt_kohga_noinit,		"noinit"},
 	{Opt_err_cont,		"errors=continue"},
 	{Opt_err_panic,		"errors=panic"},
 	{Opt_err_ro,		"errors=remount-ro"},
@@ -407,6 +528,10 @@ static int pram_parse_options(char *options, struct pram_sb_info *sbi,
 			clear_opt(sbi->s_mount_opt, ERRORS_PANIC);
 			set_opt(sbi->s_mount_opt, ERRORS_CONT);
 			break;
+		case Opt_kohga_noinit:
+			pram_info("kohga: catch_noinit\n");
+			set_opt(sbi->s_mount_opt, NOINIT);
+			break;
 		case Opt_noprotect:
 #ifdef CONFIG_PRAMFS_WRITE_PROTECT
 			if (remount)
@@ -451,6 +576,7 @@ static int pram_parse_options(char *options, struct pram_sb_info *sbi,
 			break;
 #endif
 		default: {
+			pram_info("kohga: opt_default_case\n");
 			goto bad_opt;
 		}
 		}
@@ -815,6 +941,14 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 
 	initsize = sbi->initsize;
 
+	if(sbi->s_mount_opt & PRAM_MOUNT_NOINIT){
+		pram_info("kohga; catch_noinit_flag!!!\n");
+		goto noinit;
+	}else{
+		pram_info("kohga; init!!!\n");
+	}
+
+
 	/* Init a new pramfs instance */
 	if (initsize) {
 
@@ -845,12 +979,43 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		//}
 
 		super = pram_get_super(sb);
+
+		/*
+		 * The first inode we look at is the journal inode.  Don't try
+		 * root first: it may be modified in the journal!
+		 */
+		/*
+		if (!test_opt(sb, NOLOAD) &&
+				EXT3_HAS_COMPAT_FEATURE(sb, EXT3_FEATURE_COMPAT_HAS_JOURNAL)) {
+			if (ext3_load_journal(sb, es, journal_devnum))
+				goto failed_mount2;
+		} else if (journal_inum) {
+			if (ext3_create_journal(sb, es, journal_inum))
+				goto failed_mount2;
+		} else {
+			if (!silent)
+				ext3_msg(sb, KERN_ERR,
+						"error: no journal found. "
+						"mounting ext3 over ext2?");
+			goto failed_mount2;
+		}
+		*/
+		journal_inum=12;
+		pram_info("kohga; 1\n");
+		if (pram_create_journal(sb, super, journal_inum)){
+			pram_info("kohga; journal failed!\n");
+		}else{
+			pram_info("kohga; journal success!\n");
+		}
+
 		pram_info("kohga;pram_fill_super: goto setup_sb\n");
 		goto setup_sb;
 	}
 
+ noinit:
+
 	pram_dbg("checking physical address 0x%016llx for pramfs image\n",
-		   (u64)sbi->phys_addr);
+			(u64)sbi->phys_addr);
 
 	/* Map only one page for now. Will remap it when fs size is known. */
 	initsize = PAGE_SIZE;
@@ -903,8 +1068,10 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	pram_info("pramfs image appears to be %lu KB in size\n", initsize>>10);
 	pram_info("blocksize %lu\n", blocksize);
 
+	pram_info("kohga; ****1\n");
 	/* Read the root inode */
 	root_pi = pram_get_inode(sb, PRAM_ROOT_INO);
+	pram_info("kohga; ****2\n");
 
 	/* Check that the root inode is in a sane state */
 	pram_root_check(sb, root_pi);

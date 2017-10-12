@@ -23,6 +23,8 @@
 #include "xip.h"
 #include "acl.h"
 
+unsigned long kohga_pram_flag;
+
 struct backing_dev_info pram_backing_dev_info __read_mostly = {
 	.ra_pages       = 0,    /* No readahead */
 	.capabilities	= BDI_CAP_NO_ACCT_AND_WRITEBACK,
@@ -373,11 +375,16 @@ static int pram_read_inode(struct inode *inode, struct pram_inode *pi)
 {
 	int ret = -EIO;
 
-	mutex_lock(&PRAM_I(inode)->i_meta_mutex);
+	if( kohga_pram_flag & KOHGA_PRAM_IGET ){
+		pram_info("kohga; pram_read_inode;flag ck \n");
+	}else{
+		mutex_lock(&PRAM_I(inode)->i_meta_mutex);
+	}
 
 	if (pram_calc_checksum((u8 *)pi, PRAM_INODE_SIZE)) {
 		pram_err(inode->i_sb, "checksum error in inode %08x\n",
 			  (u32)inode->i_ino);
+		pram_info("kohga; pram_read_inode; go bad_inode \n");
 		goto bad_inode;
 	}
 
@@ -393,6 +400,7 @@ static int pram_read_inode(struct inode *inode, struct pram_inode *pi)
 		inode->i_ctime.tv_nsec = 0;
 	inode->i_generation = be32_to_cpu(pi->i_generation);
 	pram_set_inode_flags(inode, pi);
+	pram_info("kohga; pram_read_inode; 1 \n");
 
 	/* check if the inode is active. */
 	if (inode->i_nlink == 0 && (inode->i_mode == 0 ||
@@ -400,6 +408,7 @@ static int pram_read_inode(struct inode *inode, struct pram_inode *pi)
 		/* this inode is deleted */
 		pram_dbg("read inode: inode %lu not active", inode->i_ino);
 		ret = -ESTALE;
+		pram_info("kohga; pram_read_inode; go bad_inode 2 \n");
 		goto bad_inode;
 	}
 
@@ -407,6 +416,7 @@ static int pram_read_inode(struct inode *inode, struct pram_inode *pi)
 	inode->i_ino = pram_get_inodenr(inode->i_sb, pi);
 	inode->i_mapping->a_ops = &pram_aops;
 	inode->i_mapping->backing_dev_info = &pram_backing_dev_info;
+	pram_info("kohga; pram_read_inode; 2 \n");
 
 	switch (inode->i_mode & S_IFMT) {
 	case S_IFREG:
@@ -433,11 +443,21 @@ static int pram_read_inode(struct inode *inode, struct pram_inode *pi)
 		break;
 	}
 
-	mutex_unlock(&PRAM_I(inode)->i_meta_mutex);
+	if( kohga_pram_flag & KOHGA_PRAM_IGET ){
+		pram_info("kohga; pram_read_inode; success!\n");
+		kohga_pram_flag &= ~KOHGA_PRAM_IGET;
+	}else{
+		mutex_unlock(&PRAM_I(inode)->i_meta_mutex);
+	}
 	return 0;
 
- bad_inode:
-	mutex_unlock(&PRAM_I(inode)->i_meta_mutex);
+bad_inode:
+	if( kohga_pram_flag & KOHGA_PRAM_IGET ){
+		pram_info("kohga; pram_read_inode; bad_inode \n");
+		kohga_pram_flag &= ~KOHGA_PRAM_IGET;
+	}else{
+		mutex_unlock(&PRAM_I(inode)->i_meta_mutex);
+	}
 	return ret;
 }
 
@@ -529,49 +549,68 @@ struct inode *pram_iget(struct super_block *sb, unsigned long ino)
 	struct pram_inode_vfs *pi_vfs;
 	journal_t *journal = PRAM_SB(sb)->s_journal;
 	transaction_t *transaction;
+	pram_info("kohga; pram_iget; 1\n");
 
 	inode = iget_locked(sb, ino);
 	if (unlikely(!inode))
 		return ERR_PTR(-ENOMEM);
 	if (!(inode->i_state & I_NEW))
 		return inode;
+	pram_info("kohga; pram_iget; 2\n");
 
 	pi = pram_get_inode(sb, ino);
 	if (!pi) {
 		err = -EACCES;
 		goto fail;
 	}
+	pram_info("kohga; pram_iget; 3\n");
+	kohga_pram_flag |= KOHGA_PRAM_IGET;
 	err = pram_read_inode(inode, pi);
 	if (unlikely(err))
 		goto fail;
+	pram_info("kohga; pram_iget; 4\n");
 
 	//kohga hacked
 	pi_vfs = PRAM_I(inode);
+	pram_info("kohga; pram_iget; 5\n");
 	if (journal) {
 		tid_t tid;
 
 		spin_lock(&journal->j_state_lock);
+		pram_info("kohga; pram_iget; 6\n");
 
 		if (journal->j_running_transaction)
 			transaction = journal->j_running_transaction;
 		else
 			transaction = journal->j_committing_transaction;
 
+		pram_info("kohga; pram_iget; 7\n");
+
 		if (transaction)
 			tid = transaction->t_tid;
 		else
 			tid = journal->j_commit_sequence;
 
+		pram_info("kohga; pram_iget; 8\n");
+
 		spin_unlock(&journal->j_state_lock);
 
+		pram_info("kohga; pram_iget; 9\n");
+
 		atomic_set(&pi_vfs->i_sync_tid, tid);
+		pram_info("kohga; pram_iget; 10\n");
+		
 		atomic_set(&pi_vfs->i_datasync_tid, tid);
+		pram_info("kohga; pram_iget; 11\n");
 	}
 
 	unlock_new_inode(inode);
+	pram_info("kohga; pram_iget; 11\n");
 	return inode;
 fail:
+	pram_info("kohga; pram_iget; 12\n");
 	iget_failed(inode);
+	pram_info("kohga; pram_iget; 13\n");
 	return ERR_PTR(err);
 }
 

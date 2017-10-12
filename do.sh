@@ -39,8 +39,8 @@ if [ "${USER}" = "root" ]; then
 	mvfile $VMLINUZ "vmlinuz-3.12.49"
 
 	cd ${TARGET_DIR}
-	echo "===== make -j5 ====="
-	make -j5
+	echo "===== make -j4 ====="
+	make -j4
 	echo "===== make modules ====="
 	make modules
 	echo "===== make modules_install ====="

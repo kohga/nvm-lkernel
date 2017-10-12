@@ -32,11 +32,13 @@
 #define PRAM_MOUNT_ERRORS_CONT		0x000010  /* Continue on errors */
 #define PRAM_MOUNT_ERRORS_RO		0x000020  /* Remount fs ro on errors */
 #define PRAM_MOUNT_ERRORS_PANIC		0x000040  /* Panic on errors */
-#define PRAM_MOUNT_ERRORS_PANIC		0x000040  /* Panic on errors */
 
 //kohga hacked
 #define PRAM_ERRORS_KOHGA		0x000080  /* Kohga ops errors */
 #define PRAM_MOUNT_ABORT		0x000100  /* Kohga ops errors */
+#define PRAM_MOUNT_BARRIER		0x000200  /* Kohga ops errors */
+#define PRAM_MOUNT_DATA_ERR_ABORT		0x000400  /* Kohga ops errors */
+#define PRAM_MOUNT_NOINIT		0x000800  /* Kohga ops */
 
 /*
  * Pram inode flags

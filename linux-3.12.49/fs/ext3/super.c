@@ -1778,8 +1778,11 @@ static int ext3_fill_super (struct super_block *sb, void *data, int silent)
 	set_opt(sbi->s_mount_opt, RESERVATION);
 
 	if (!parse_options ((char *) data, sb, &journal_inum, &journal_devnum,
-			    NULL, 0))
+			    NULL, 0)){
 		goto failed_mount;
+	}else{
+		printk(KERN_DEBUG,"kohga; journal_inum = %d\n",journal_inum);
+	}
 
 	sb->s_flags = (sb->s_flags & ~MS_POSIXACL) |
 		(test_opt(sb, POSIX_ACL) ? MS_POSIXACL : 0);
