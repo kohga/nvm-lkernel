@@ -1,0 +1,130 @@
+ext3/resize.c:126:		memset(bh->b_data, 0, sb->s_blocksize);
+ext3/resize.c:522:	inode->i_blocks -= (gdbackups + 1) * sb->s_blocksize >> 9;
+ext3/resize.c:526:	memset((*primary)->b_data, 0, sb->s_blocksize);
+ext3/resize.c:664:	inode->i_blocks += reserved_gdb * sb->s_blocksize >> 9;
+ext3/resize.c:704:	int rest = sb->s_blocksize - size;
+ext3/resize.c:1015:	if (n_blocks_count > (sector_t)(~0ULL) >> (sb->s_blocksize_bits - 9)) {
+ext3/resize.c:1018:			sb->s_id, n_blocks_count);
+ext3/dir.c:56:	     ((inode->i_size >> sb->s_blocksize_bits) == 1)))
+ext3/dir.c:76:	else if (unlikely((((char *) de - bh->b_data) + rlen > dir->i_sb->s_blocksize)))
+ext3/dir.c:113:	offset = ctx->pos & (sb->s_blocksize - 1);
+ext3/dir.c:127:					sb->s_bdev->bd_inode->i_mapping,
+ext3/dir.c:148:			ctx->pos += sb->s_blocksize - offset;
+ext3/dir.c:157:			for (i = 0; i < sb->s_blocksize && i < offset; ) {
+ext3/dir.c:172:			ctx->pos = (ctx->pos & ~(sb->s_blocksize - 1))
+ext3/dir.c:178:		       && offset < sb->s_blocksize) {
+ext3/dir.c:185:						(sb->s_blocksize - 1)) + 1;
+ext3/xattr.c:74:			inode->i_sb->s_id, inode->i_ino); \
+ext3/xattr.c:687:	if (i->value && i->value_len > sb->s_blocksize)
+ext3/xattr.c:742:		s->base = kzalloc(sb->s_blocksize, GFP_NOFS);
+ext3/xattr.c:752:		s->end = s->base + sb->s_blocksize;
+ext3/xattr.c:1122:	mb_cache_shrink(sb->s_bdev);
+ext3/xattr.c:1217:	ce = mb_cache_entry_find_first(ext3_xattr_cache, inode->i_sb->s_bdev,
+ext3/xattr.c:1243:		ce = mb_cache_entry_find_next(ce, inode->i_sb->s_bdev, hash);
+ext3/inode.c:44:		(inode->i_sb->s_blocksize >> 9) : 0;
+ext3/inode.c:107:	needed = inode->i_blocks >> (inode->i_sb->s_blocksize_bits - 9);
+ext3/inode.c:657:	int blocksize = inode->i_sb->s_blocksize;
+ext3/inode.c:1106:				memset(bh->b_data,0,inode->i_sb->s_blocksize);
+ext3/inode.c:1640:		create_empty_buffers(page, inode->i_sb->s_blocksize,
+ext3/inode.c:2048:	blocksize = inode->i_sb->s_blocksize;
+ext3/inode.c:2056:	iblock = index << (PAGE_CACHE_SHIFT - inode->i_sb->s_blocksize_bits);
+ext3/inode.c:2547:	unsigned blocksize = inode->i_sb->s_blocksize;
+ext3/ialloc.c:213:	if ((parent == sb->s_root->d_inode) ||
+ext3/balloc.c:1467:	jbd_debug(1, "%s: retrying operation after ENOSPC\n", sb->s_id);
+ext3/balloc.c:1808:		x = ext3_count_free(bitmap_bh, sb->s_blocksize);
+ext3/balloc.c:2100:	start = range->start >> sb->s_blocksize_bits;
+ext3/balloc.c:2101:	end = start + (range->len >> sb->s_blocksize_bits) - 1;
+ext3/balloc.c:2102:	minlen = range->minlen >> sb->s_blocksize_bits;
+ext3/balloc.c:2106:	    range->len < sb->s_blocksize)
+ext3/balloc.c:2159:	range->len = trimmed * sb->s_blocksize;
+ext3/fsync.c:51:	if (inode->i_sb->s_flags & MS_RDONLY) {
+ext3/fsync.c:102:		err = blkdev_issue_flush(inode->i_sb->s_bdev, GFP_KERNEL, NULL);
+ext3/super.c:73:	if (sb->s_flags & MS_RDONLY)
+ext3/super.c:138:	printk("%sEXT3-fs (%s): %pV\n", prefix, sb->s_id, &vaf);
+ext3/super.c:165:	if (sb->s_flags & MS_RDONLY)
+ext3/super.c:183:		sb->s_flags |= MS_RDONLY;
+ext3/super.c:188:			sb->s_id);
+ext3/super.c:203:	       sb->s_id, function, &vaf);
+ext3/super.c:256:	    (sb->s_flags & MS_RDONLY))
+ext3/super.c:287:	       sb->s_id, function, &vaf);
+ext3/super.c:294:	if (sb->s_flags & MS_RDONLY)
+ext3/super.c:306:	sb->s_flags |= MS_RDONLY;
+ext3/super.c:324:	       sb->s_id, function, &vaf);
+ext3/super.c:409:		       inode->i_sb->s_id, inode->i_ino, inode,
+ext3/super.c:428:	if (!(sb->s_flags & MS_RDONLY)) {
+ext3/super.c:456:	invalidate_bdev(sb->s_bdev);
+ext3/super.c:457:	if (sbi->journal_bdev && sbi->journal_bdev != sb->s_bdev) {
+ext3/super.c:467:	sb->s_fs_info = NULL;
+ext3/super.c:1414:			sb->s_blocksize,
+ext3/super.c:1509:	unsigned int s_flags = sb->s_flags;
+ext3/super.c:1519:	if (bdev_read_only(sb->s_bdev)) {
+ext3/super.c:1545:		sb->s_flags &= ~MS_RDONLY;
+ext3/super.c:1549:	sb->s_flags |= MS_ACTIVE;
+ext3/super.c:1607:	sb->s_flags = s_flags; /* Restore MS_RDONLY status */
+ext3/super.c:1709:	sb->s_fs_info = sbi;
+ext3/super.c:1739:	sb->s_magic = le16_to_cpu(es->s_magic);
+ext3/super.c:1740:	if (sb->s_magic != EXT3_SUPER_MAGIC){
+ext3/super.c:1789:	sb->s_flags = (sb->s_flags & ~MS_POSIXACL) |
+ext3/super.c:1812:	if (!(sb->s_flags & MS_RDONLY) && features) {
+ext3/super.c:1828:	hblock = bdev_logical_block_size(sb->s_bdev);
+ext3/super.c:1829:	if (sb->s_blocksize != blocksize) {
+ext3/super.c:1864:	sb->s_maxbytes = ext3_max_size(sb->s_blocksize_bits);
+ext3/super.c:1939:	err = generic_check_addressable(sb->s_blocksize_bits,
+ext3/super.c:2003:	sb->s_op = &ext3_sops;
+ext3/super.c:2004:	sb->s_export_op = &ext3_export_ops;
+ext3/super.c:2005:	sb->s_xattr = ext3_xattr_handlers;
+ext3/super.c:2007:	sb->s_qcop = &ext3_qctl_operations;
+ext3/super.c:2008:	sb->dq_op = &ext3_quota_operations;
+ext3/super.c:2010:	memcpy(sb->s_uuid, es->s_uuid, sizeof(es->s_uuid));
+ext3/super.c:2015:	sb->s_root = NULL;
+ext3/super.c:2102:	sb->s_root = d_make_root(root);
+ext3/super.c:2103:	if (!sb->s_root) {
+ext3/super.c:2109:	if (ext3_setup_super(sb, es, sb->s_flags & MS_RDONLY))
+ext3/super.c:2110:		sb->s_flags |= MS_RDONLY;
+ext3/super.c:2130:		       sb->s_id);
+ext3/super.c:2150:	sb->s_fs_info = NULL;
+ext3/super.c:2241:	blocksize = sb->s_blocksize;
+ext3/super.c:2278:	journal = journal_init_dev(bdev, sb->s_bdev,
+ext3/super.c:2327:	really_read_only = bdev_read_only(sb->s_bdev);
+ext3/super.c:2336:		if (sb->s_flags & MS_RDONLY) {
+ext3/super.c:2407:	if (sb->s_flags & MS_RDONLY) {
+ext3/super.c:2476:	if (!(sb->s_flags & MS_RDONLY))
+ext3/super.c:2510:	    sb->s_flags & MS_RDONLY) {
+ext3/super.c:2565:	if (sb->s_flags & MS_RDONLY)
+ext3/super.c:2599:	if (!(sb->s_flags & MS_RDONLY)) {
+ext3/super.c:2632:	if (!(sb->s_flags & MS_RDONLY)) {
+ext3/super.c:2655:	old_sb_flags = sb->s_flags;
+ext3/super.c:2688:	sb->s_flags = (sb->s_flags & ~MS_POSIXACL) |
+ext3/super.c:2695:	if ((*flags & MS_RDONLY) != (sb->s_flags & MS_RDONLY) ||
+ext3/super.c:2711:			sb->s_flags |= MS_RDONLY;
+ext3/super.c:2760:				sb->s_flags &= ~MS_RDONLY;
+ext3/super.c:2773:	sb->s_flags = old_sb_flags;
+ext3/super.c:2836:	buf->f_bsize = sb->s_blocksize;
+ext3/super.c:2940:	handle = ext3_journal_start(sb->s_root->d_inode, 2);
+ext3/super.c:2977:		if (path->dentry->d_parent != sb->s_root)
+ext3/super.c:3012:	int offset = off & (sb->s_blocksize - 1);
+ext3/super.c:3024:		tocopy = sb->s_blocksize - offset < toread ?
+ext3/super.c:3025:				sb->s_blocksize - offset : toread;
+ext3/super.c:3050:	int offset = off & (sb->s_blocksize - 1);
+ext3/super.c:3067:	if (sb->s_blocksize - offset < len) {
+ext3/ext3.h:685:	return sb->s_fs_info;
+ext3/namei.c:46:	*block = inode->i_size >> inode->i_sb->s_blocksize_bits;
+ext3/namei.c:49:		inode->i_size += inode->i_sb->s_blocksize;
+ext3/namei.c:225:	unsigned entry_space = dir->i_sb->s_blocksize - EXT3_DIR_REC_LEN(1) -
+ext3/namei.c:232:	unsigned entry_space = dir->i_sb->s_blocksize - EXT3_DIR_REC_LEN(0);
+ext3/namei.c:291:	unsigned blocksize = dir->i_sb->s_blocksize;
+ext3/namei.c:573:					   dir->i_sb->s_blocksize -
+ext3/namei.c:806:	dlimit = bh->b_data + dir->i_sb->s_blocksize;
+ext3/namei.c:1142:	unsigned blocksize = dir->i_sb->s_blocksize;
+ext3/namei.c:1257:		top = bh->b_data + dir->i_sb->s_blocksize - reclen;
+ext3/namei.c:1349:	blocksize =  dir->i_sb->s_blocksize;
+ext3/namei.c:1448:	blocksize = sb->s_blocksize;
+ext3/namei.c:1459:	blocks = dir->i_size >> sb->s_blocksize_bits;
+ext3/namei.c:1542:		node2->fake.rec_len = ext3_rec_len_to_disk(sb->s_blocksize);
+ext3/namei.c:1830:	inode->i_size = EXT3_I(inode)->i_disksize = inode->i_sb->s_blocksize;
+ext3/namei.c:1847:	de->rec_len = ext3_rec_len_to_disk(inode->i_sb->s_blocksize -
+ext3/namei.c:1927:			(void *) de >= (void *) (bh->b_data+sb->s_blocksize)) {
+ext3/namei.c:1937:				offset += sb->s_blocksize;
+ext3/namei.c:1944:							 sb->s_blocksize);
+ext3/namei.c:1945:			offset = (offset | (sb->s_blocksize - 1)) + 1;
+ext3/namei.c:2231:	if (l > dir->i_sb->s_blocksize)

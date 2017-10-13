@@ -25,7 +25,7 @@
 
 #define KOHGA_PRAM_IGET 0x00000001
 extern unsigned long kohga_pram_flag;
-
+typedef unsigned long pram_fsblk_t;
 
 /*
  * Debug code

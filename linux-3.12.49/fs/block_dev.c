@@ -501,8 +501,10 @@ struct block_device *bdget(dev_t dev)
 	inode = iget5_locked(blockdev_superblock, hash(dev),
 			bdev_test, bdev_set, &dev);
 
-	if (!inode)
+	if (!inode){
+		printk("kohga; bdget; NULL\n");
 		return NULL;
+	}
 
 	bdev = &BDEV_I(inode)->bdev;
 
@@ -1225,6 +1227,7 @@ int blkdev_get(struct block_device *bdev, fmode_t mode, void *holder)
 		whole = bd_start_claiming(bdev, holder);
 		if (IS_ERR(whole)) {
 			bdput(bdev);
+			printk("kohga;  blkdev_get; ERR_PTR(whole)\n");
 			return PTR_ERR(whole);
 		}
 	}
@@ -1348,12 +1351,16 @@ struct block_device *blkdev_get_by_dev(dev_t dev, fmode_t mode, void *holder)
 	int err;
 
 	bdev = bdget(dev);
-	if (!bdev)
+	if (!bdev){
+		printk("kohga;  ERR_PTR(-ENOMEM)\n");
 		return ERR_PTR(-ENOMEM);
+	}
 
 	err = blkdev_get(bdev, mode, holder);
-	if (err)
+	if (err){
+		printk("kohga;  ERR_PTR(err)\n");
 		return ERR_PTR(err);
+	}
 
 	return bdev;
 }

@@ -47,6 +47,8 @@ struct pram_sb_info {
 
 	/* Journaling */
 	phys_addr_t jbd_phys_addr;
+	unsigned long jbd_size;
+
 	void *jbd_virt_addr;
 	struct inode * s_journal_inode;
 	struct journal_s * s_journal;

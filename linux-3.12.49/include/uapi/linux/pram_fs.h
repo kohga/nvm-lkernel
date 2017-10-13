@@ -39,6 +39,7 @@
 #define PRAM_MOUNT_BARRIER		0x000200  /* Kohga ops errors */
 #define PRAM_MOUNT_DATA_ERR_ABORT		0x000400  /* Kohga ops errors */
 #define PRAM_MOUNT_NOINIT		0x000800  /* Kohga ops */
+#define PRAM_MOUNT_UPDATE_JOURNAL		0x001000  /* Kohga ops */
 
 /*
  * Pram inode flags

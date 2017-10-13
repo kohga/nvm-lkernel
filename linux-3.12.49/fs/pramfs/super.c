@@ -176,6 +176,47 @@ void pram_journal_abort_handle(const char *caller, const char *err_fn,
 	journal_abort_handle(handle);
 }
 
+
+/*
+ * If we are mounting (or read-write remounting) a filesystem whose journal
+ * has recorded an error from a previous lifetime, move that error to the
+ * main filesystem now.
+ */
+static void pram_clear_journal_err(struct super_block *sb,
+				   struct pram_super_block *ps)
+{
+	journal_t *journal;
+	int j_errno;
+	//const char *errstr;
+
+	journal = PRAM_SB(sb)->s_journal;
+
+	/*
+	 * Now check for any error status which may have been recorded in the
+	 * journal by a prior ext3_error() or ext3_abort()
+	 */
+
+	j_errno = journal_errno(journal);
+	if (j_errno) {
+
+#if 0
+		char nbuf[16];
+
+		errstr = ext3_decode_error(sb, j_errno, nbuf);
+		pram_info( "Filesystem error recorded from previous mount: %s \n", errstr);
+		pram_info( "Marking fs in need of filesystem check.\n");
+
+		PRAM_SB(sb)->s_mount_state |= PRAM_ERROR_FS;
+		es->s_state |= cpu_to_le16(PRAM_ERROR_FS);
+		//ext3_commit_super (sb, es, 1);
+#endif
+
+		pram_info( "Marking fs in need of filesystem check.\n");
+		journal_clear_err(journal);
+	}
+}
+
+
 /*
  * Setup any per-fs journal parameters now.  We'll do this both on
  * initial mount, once the journal has been initialised but before we've
@@ -246,6 +287,294 @@ static journal_t *pram_get_journal(struct super_block *sb,
 	pram_init_journal_params(sb, journal);
 	return journal;
 }
+
+
+/*
+ * Open the external journal device
+ */
+static struct block_device *pram_blkdev_get(dev_t dev, struct super_block *sb)
+{
+	struct block_device *bdev;
+	char b[BDEVNAME_SIZE];
+
+	//bdev = blkdev_get_by_dev(dev, FMODE_READ|FMODE_WRITE|FMODE_EXCL, sb);
+	bdev = blkdev_get_by_dev(dev, FMODE_READ|FMODE_WRITE, sb);
+	if (IS_ERR(bdev))
+		goto fail;
+	return bdev;
+
+fail:
+	pram_info("error: failed to open journal device %s: %ld",
+		__bdevname(dev, b), PTR_ERR(bdev));
+
+	return NULL;
+}
+
+/*
+ * Release the journal device
+ */
+static void pram_blkdev_put(struct block_device *bdev)
+{
+	blkdev_put(bdev, FMODE_READ|FMODE_WRITE|FMODE_EXCL);
+}
+
+static void pram_blkdev_remove(struct pram_sb_info *sbi)
+{
+	struct block_device *bdev;
+	bdev = sbi->journal_bdev;
+	if (bdev) {
+		pram_blkdev_put(bdev);
+		sbi->journal_bdev = NULL;
+	}
+}
+
+
+static journal_t *pram_get_dev_journal(struct super_block *sb,
+				       dev_t j_dev)
+{
+	struct buffer_head * bh;
+	journal_t *journal;
+	//pram_fsblk_t start;
+	//pram_fsblk_t len;
+	int hblock /*, blocksize*/;
+	pram_fsblk_t sb_block;
+	unsigned long offset;
+	struct pram_super_block * es;
+	struct block_device *bdev;
+
+	unsigned long start;
+	unsigned long len;
+	unsigned long blocksize;
+
+	bdev = pram_blkdev_get(j_dev, sb);
+	if (bdev == NULL)
+		return NULL;
+
+#if 0
+	blocksize = sb->s_blocksize;
+	hblock = bdev_logical_block_size(bdev);
+	if (blocksize < hblock) {
+		pram_info("error: blocksize too small for journal device\n");
+		goto out_bdev;
+	}
+
+	sb_block = EXT3_MIN_BLOCK_SIZE / blocksize;
+	offset = EXT3_MIN_BLOCK_SIZE % blocksize;
+	set_blocksize(bdev, blocksize);
+	if (!(bh = __bread(bdev, sb_block, blocksize))) {
+		ext3_msg(sb, KERN_ERR, "error: couldn't read superblock of "
+			"external journal");
+		goto out_bdev;
+	}
+
+	es = (struct ext3_super_block *) (bh->b_data + offset);
+	if ((le16_to_cpu(es->s_magic) != EXT3_SUPER_MAGIC) ||
+	    !(le32_to_cpu(es->s_feature_incompat) &
+	      EXT3_FEATURE_INCOMPAT_JOURNAL_DEV)) {
+		ext3_msg(sb, KERN_ERR, "error: external journal has "
+			"bad superblock");
+		brelse(bh);
+		goto out_bdev;
+	}
+
+	if (memcmp(EXT3_SB(sb)->s_es->s_journal_uuid, es->s_uuid, 16)) {
+		ext3_msg(sb, KERN_ERR, "error: journal UUID does not match");
+		brelse(bh);
+		goto out_bdev;
+	}
+
+	len = le32_to_cpu(es->s_blocks_count);
+	start = sb_block + 1;
+	brelse(bh);	/* we're done with the superblock */
+#endif
+
+
+	start = PRAM_SB(sb)->jbd_phys_addr;
+	len = PRAM_SB(sb)->jbd_size;
+	blocksize = PRAM_SB(sb)->blocksize;
+	
+	pram_info("kohga; start = %lu \n",start);
+	pram_info("kohga; len = %lu \n",len);
+	pram_info("kohga; blocksize = %lu \n",blocksize);
+
+	journal = journal_init_dev(bdev, sb->s_bdev,
+					start, len, blocksize);
+	if (!journal) {
+		pram_info("error: failed to create device journal\n");
+		goto out_bdev;
+	}
+
+	journal->j_private = sb;
+	if (!bh_uptodate_or_lock(journal->j_sb_buffer)) {
+		if (bh_submit_read(journal->j_sb_buffer)) {
+			pram_info("I/O error on journal device\n");
+			goto out_journal;
+		}
+	}
+	if (be32_to_cpu(journal->j_superblock->s_nr_users) != 1) {
+		pram_info("error: external journal has more than one user (unsupported) - %d \n",
+			be32_to_cpu(journal->j_superblock->s_nr_users));
+		goto out_journal;
+	}
+
+	PRAM_SB(sb)->journal_bdev = bdev;
+	pram_init_journal_params(sb, journal);
+
+	return journal;
+
+out_journal:
+	journal_destroy(journal);
+out_bdev:
+	pram_blkdev_put(bdev);
+
+	return NULL;
+}
+
+
+#if 0
+static int pram_commit_super(struct super_block *sb,
+			       struct pram_super_block *es,
+			       int sync)
+{
+	struct buffer_head *sbh = EXT3_SB(sb)->s_sbh;
+	int error = 0;
+
+	if (!sbh)
+		return error;
+
+	if (buffer_write_io_error(sbh)) {
+		/*
+		 * Oh, dear.  A previous attempt to write the
+		 * superblock failed.  This could happen because the
+		 * USB device was yanked out.  Or it could happen to
+		 * be a transient write error and maybe the block will
+		 * be remapped.  Nothing we can do but to retry the
+		 * write and hope for the best.
+		 */
+		ext3_msg(sb, KERN_ERR, "previous I/O error to "
+		       "superblock detected");
+		clear_buffer_write_io_error(sbh);
+		set_buffer_uptodate(sbh);
+	}
+	/*
+	 * If the file system is mounted read-only, don't update the
+	 * superblock write time.  This avoids updating the superblock
+	 * write time when we are mounting the root file system
+	 * read/only but we need to replay the journal; at that point,
+	 * for people who are east of GMT and who make their clock
+	 * tick in localtime for Windows bug-for-bug compatibility,
+	 * the clock is set in the future, and this will cause e2fsck
+	 * to complain and force a full file system check.
+	 */
+	if (!(sb->s_flags & MS_RDONLY))
+		es->s_wtime = cpu_to_le32(get_seconds());
+	es->s_free_blocks_count = cpu_to_le32(ext3_count_free_blocks(sb));
+	es->s_free_inodes_count = cpu_to_le32(ext3_count_free_inodes(sb));
+	BUFFER_TRACE(sbh, "marking dirty");
+	mark_buffer_dirty(sbh);
+	if (sync) {
+		error = sync_dirty_buffer(sbh);
+		if (buffer_write_io_error(sbh)) {
+			ext3_msg(sb, KERN_ERR, "I/O error while writing "
+			       "superblock");
+			clear_buffer_write_io_error(sbh);
+			set_buffer_uptodate(sbh);
+		}
+	}
+	return error;
+}
+#endif
+
+
+static int pram_load_journal(struct super_block *sb,
+			     struct pram_super_block *es,
+			     unsigned long journal_devnum)
+{
+	journal_t *journal;
+	unsigned int journal_inum = le32_to_cpu(es->s_journal_inum);
+	dev_t journal_dev;
+	int err = 0;
+	int really_read_only;
+
+	if (journal_devnum &&
+	    journal_devnum != le32_to_cpu(es->s_journal_dev)) {
+		pram_info("external journal device major/minor numbers have changed\n");
+		journal_dev = new_decode_dev(journal_devnum);
+	} else
+		journal_dev = new_decode_dev(le32_to_cpu(es->s_journal_dev));
+
+	really_read_only = bdev_read_only(sb->s_bdev);
+
+	/*
+	 * Are we loading a blank journal or performing recovery after a
+	 * crash?  For recovery, we need to check in advance whether we
+	 * can get read-write access to the device.
+	 */
+	// read-write
+	//if (EXT3_HAS_INCOMPAT_FEATURE(sb, EXT3_FEATURE_INCOMPAT_RECOVER)) {
+	if (sb->s_flags & MS_RDONLY) {
+		pram_info("recovery required on readonly filesystem\n");
+		if (really_read_only) {
+			pram_info("error: write access unavailable, cannot proceed\n");
+			return -EROFS;
+		}
+		pram_info("write access will be enabled during recovery\n");
+	}
+	//}
+
+	if (journal_inum && journal_dev) {
+		pram_info("error: filesystem has both journal and inode journals\n");
+		return -EINVAL;
+	}
+
+	if (journal_inum) {
+		if (!(journal = pram_get_journal(sb, journal_inum)))
+			return -EINVAL;
+	} else {
+		if (!(journal = pram_get_dev_journal(sb, journal_dev)))
+			return -EINVAL;
+	}
+
+	if (!(journal->j_flags & JFS_BARRIER))
+		printk(KERN_INFO "PRAM-fs: barriers not enabled\n");
+
+	if (!really_read_only && test_opt(sb, UPDATE_JOURNAL)) {
+		err = journal_update_format(journal);
+		if (err)  {
+			pram_info("error updating journal\n");
+			journal_destroy(journal);
+			return err;
+		}
+	}
+
+	//if (!EXT3_HAS_INCOMPAT_FEATURE(sb, EXT3_FEATURE_INCOMPAT_RECOVER))
+	//	err = journal_wipe(journal, !really_read_only);
+	
+	err = journal_wipe(journal, !really_read_only);
+	if (!err)
+		err = journal_load(journal);
+
+	if (err) {
+		pram_info("error loading journal\n");
+		journal_destroy(journal);
+		return err;
+	}
+
+	PRAM_SB(sb)->s_journal = journal;
+	//pram_clear_journal_err(sb, es);
+
+	if (!really_read_only && journal_devnum &&
+	    journal_devnum != le32_to_cpu(es->s_journal_dev)) {
+		es->s_journal_dev = cpu_to_le32(journal_devnum);
+
+		/* Make sure we flush the recovery flag to disk. */
+		//pram_commit_super(sb, es, 1);
+	}
+
+	return 0;
+}
+
+
 
 static int pram_create_journal(struct super_block *sb,
 			       struct pram_super_block *ps,
@@ -715,6 +1044,10 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 	return root_i;
 }
 
+
+
+# if 0
+
 static struct pram_inode *jbd_init(struct super_block *sb, unsigned long size)
 {
 	unsigned long bpi, num_inodes, bitmap_size, blocksize, num_blocks;
@@ -837,6 +1170,10 @@ static struct pram_inode *jbd_init(struct super_block *sb, unsigned long size)
 	return root_i;
 }
 
+#endif
+
+
+
 static inline void set_default_opts(struct pram_sb_info *sbi)
 {
 #ifdef CONFIG_PRAMFS_WRITE_PROTECT
@@ -951,22 +1288,23 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 
 	/* Init a new pramfs instance */
 	if (initsize) {
+		pram_info("kohga; initsize = %lu \n",initsize);
 
 		//kohga_hack
 		unsigned long pram_initsize = initsize/2;
-		unsigned long jbd_initsize = initsize/2;
+		unsigned long jbd_initsize = initsize/2 - 1;
 		unsigned long jbd_area_start = initsize/2 + 1 ;
 		unsigned long jbd_area_end = initsize;
-		pram_info("kohga;jbd_area_start = %lu\n", jbd_area_start);
-		pram_info("kohga;jbd_area_end = %lu\n", jbd_area_end);
 
 		root_pi = pram_init(sb, pram_initsize);
 
 		//kohga_hack
-		sbi->jbd_phys_addr = sbi->phys_addr;
-		pram_info("kohga; checking physical address 0x%016llx for pramfs image\n",(u64)sbi->jbd_phys_addr);
-		sbi->jbd_phys_addr += (u64)jbd_area_start;
-		pram_info("kohga; checking physical address 0x%016llx for pramfs image\n",(u64)sbi->jbd_phys_addr);
+		sbi->jbd_phys_addr = sbi->phys_addr + (u64)jbd_area_start;
+		pram_info("kohga; sbi->jbd_phys_addr = 0x%016llx \n",(u64)sbi->jbd_phys_addr);
+
+		sbi->jbd_size = jbd_initsize;
+		pram_info("kohga; sbi->jbd_size = %lu \n",sbi->jbd_size);
+		pram_info("kohga; jbd_phys_addr End = 0x%016llx \n",(u64)sbi->jbd_phys_addr + (u64)jbd_initsize);
 
 		//jbd_pi = jbd_init(sb, jbd_initsize); //kohga_hack
 
@@ -1000,9 +1338,11 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 			goto failed_mount2;
 		}
 		*/
-		journal_inum=12;
+		journal_inum=0;
+		journal_devnum=0;
 		pram_info("kohga; 1\n");
-		if (pram_create_journal(sb, super, journal_inum)){
+		//if (pram_create_journal(sb, super, journal_inum)){
+		if (pram_load_journal(sb, super, journal_devnum)){
 			pram_info("kohga; journal failed!\n");
 		}else{
 			pram_info("kohga; journal success!\n");

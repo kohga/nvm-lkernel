@@ -1737,8 +1737,9 @@ static int ext3_fill_super (struct super_block *sb, void *data, int silent)
 	es = (struct ext3_super_block *) (bh->b_data + offset);
 	sbi->s_es = es;
 	sb->s_magic = le16_to_cpu(es->s_magic);
-	if (sb->s_magic != EXT3_SUPER_MAGIC)
+	if (sb->s_magic != EXT3_SUPER_MAGIC){
 		goto cantfind_ext3;
+	}
 
 	/* Set defaults before we parse the mount options */
 	def_mount_opts = le32_to_cpu(es->s_default_mount_opts);
@@ -1779,10 +1780,11 @@ static int ext3_fill_super (struct super_block *sb, void *data, int silent)
 
 	if (!parse_options ((char *) data, sb, &journal_inum, &journal_devnum,
 			    NULL, 0)){
+		ext3_msg(sb, KERN_INFO, "kohga; goto failed_mount; journal_inum = %d ",journal_inum);
 		goto failed_mount;
-	}else{
-		printk(KERN_DEBUG,"kohga; journal_inum = %d\n",journal_inum);
 	}
+	
+	ext3_msg(sb, KERN_INFO, "kohga; journal_inum = %d ",journal_inum);
 
 	sb->s_flags = (sb->s_flags & ~MS_POSIXACL) |
 		(test_opt(sb, POSIX_ACL) ? MS_POSIXACL : 0);
@@ -2020,11 +2022,15 @@ static int ext3_fill_super (struct super_block *sb, void *data, int silent)
 	 * The first inode we look at is the journal inode.  Don't try
 	 * root first: it may be modified in the journal!
 	 */
+	ext3_msg(sb, KERN_INFO, "kohga;v2 journal_inum = %d ",journal_inum);
+	ext3_msg(sb, KERN_INFO, "kohga;v2 journal_devnum = %d ",journal_devnum);
 	if (!test_opt(sb, NOLOAD) &&
 	    EXT3_HAS_COMPAT_FEATURE(sb, EXT3_FEATURE_COMPAT_HAS_JOURNAL)) {
+		ext3_msg(sb, KERN_INFO, "kohga; load_journal");
 		if (ext3_load_journal(sb, es, journal_devnum))
 			goto failed_mount2;
 	} else if (journal_inum) {
+		ext3_msg(sb, KERN_INFO, "kohga; create_journal");
 		if (ext3_create_journal(sb, es, journal_inum))
 			goto failed_mount2;
 	} else {
