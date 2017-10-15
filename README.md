@@ -27,16 +27,23 @@ Boot Default Linux Kernel
 ```
 
 Mount with PRAMFS   
-ex.
+Example:   
 ```
 # mount -t pramfs -o physaddr=0x100000000,init=100M,bs=1k none /mnt/pram
 ```
 
 Mount with PRAMFS(XIP)   
-ex.
+Example:   
 ```
 # mount -t pramfs -o physaddr=0x100000000,init=2000M,bs=4096,xip none /mnt/pram
 ```
+
+When you want to mount without initializing after unmount  
+Example:   
+```
+# mount -t pramfs -o physaddr=0x100000000,init=2000M,bs=4096,xip,noinit none /mnt/pram
+```
+
 
 
 ## File System   
