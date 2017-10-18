@@ -1072,16 +1072,22 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 		ret = devcgroup_inode_permission(bdev->bd_inode, perm);
 		if (ret != 0) {
 			bdput(bdev);
+			printk(KERN_DEBUG "__blkdev_get; (!for_port); if(ret!=0)\n");
 			return ret;
 		}
 	}
 
  restart:
+	printk(KERN_DEBUG "__blkdev_get; restart\n");
 
 	ret = -ENXIO;
+	printk(KERN_DEBUG "__blkdev_get; disk 1;\n");
 	disk = get_gendisk(bdev->bd_dev, &partno);
-	if (!disk)
+	printk(KERN_DEBUG "__blkdev_get; disk 2;\n");
+	if (!disk){
+		printk(KERN_DEBUG "__blkdev_get; goto out 1;\n");
 		goto out;
+	}
 	owner = disk->fops->owner;
 
 	disk_block_events(disk);
@@ -1095,8 +1101,10 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 
 			ret = -ENXIO;
 			bdev->bd_part = disk_get_part(disk, partno);
-			if (!bdev->bd_part)
+			if (!bdev->bd_part){
+				printk(KERN_DEBUG "__blkdev_get; goto out_clear 2;\n");
 				goto out_clear;
+			}
 
 			ret = 0;
 			if (disk->fops->open) {
@@ -1114,11 +1122,13 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 					disk_unblock_events(disk);
 					put_disk(disk);
 					module_put(owner);
+					printk(KERN_DEBUG "__blkdev_get; goto restart 3;\n");
 					goto restart;
 				}
 			}
 
 			if (!ret) {
+				printk(KERN_DEBUG "__blkdev_get; !ret\n");
 				bd_set_size(bdev,(loff_t)get_capacity(disk)<<9);
 				bdi = blk_get_backing_dev_info(bdev);
 				if (bdi == NULL)
@@ -1138,18 +1148,24 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 				else if (ret == -ENOMEDIUM)
 					invalidate_partitions(disk, bdev);
 			}
-			if (ret)
+			if (ret){
+				printk(KERN_DEBUG "__blkdev_get; out_clear 4\n");
 				goto out_clear;
+			}
 		} else {
 			struct block_device *whole;
 			whole = bdget_disk(disk, 0);
 			ret = -ENOMEM;
-			if (!whole)
+			if (!whole){
+				printk(KERN_DEBUG "__blkdev_get; out_clear 5\n");
 				goto out_clear;
+			}
 			BUG_ON(for_part);
 			ret = __blkdev_get(whole, mode, 1);
-			if (ret)
+			if (ret){
+				printk(KERN_DEBUG "__blkdev_get; out_clear 6\n");
 				goto out_clear;
+			}
 			bdev->bd_contains = whole;
 			bdev_inode_switch_bdi(bdev->bd_inode,
 				whole->bd_inode->i_data.backing_dev_info);
@@ -1157,6 +1173,7 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 			if (!(disk->flags & GENHD_FL_UP) ||
 			    !bdev->bd_part || !bdev->bd_part->nr_sects) {
 				ret = -ENXIO;
+				printk(KERN_DEBUG "__blkdev_get; out_clear 7\n");
 				goto out_clear;
 			}
 			bd_set_size(bdev, (loff_t)bdev->bd_part->nr_sects << 9);
@@ -1173,8 +1190,10 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 				else if (ret == -ENOMEDIUM)
 					invalidate_partitions(bdev->bd_disk, bdev);
 			}
-			if (ret)
+			if (ret){
+				printk(KERN_DEBUG "__blkdev_get; out_unlock_bdev 8\n");
 				goto out_unlock_bdev;
+			}
 		}
 		/* only one opener holds refs to the module and disk */
 		put_disk(disk);
@@ -1185,9 +1204,12 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 		bdev->bd_part_count++;
 	mutex_unlock(&bdev->bd_mutex);
 	disk_unblock_events(disk);
+
+	printk(KERN_DEBUG "__blkdev_get; return 0;\n");
 	return 0;
 
  out_clear:
+	printk(KERN_DEBUG "__blkdev_get; out_clear:\n");
 	disk_put_part(bdev->bd_part);
 	bdev->bd_disk = NULL;
 	bdev->bd_part = NULL;
@@ -1197,13 +1219,16 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 		__blkdev_put(bdev->bd_contains, mode, 1);
 	bdev->bd_contains = NULL;
  out_unlock_bdev:
+	printk(KERN_DEBUG "__blkdev_get; out_unlock_bdev:\n");
 	mutex_unlock(&bdev->bd_mutex);
 	disk_unblock_events(disk);
 	put_disk(disk);
 	module_put(owner);
  out:
+	printk(KERN_DEBUG "__blkdev_get; out:\n");
 	bdput(bdev);
 
+	printk(KERN_DEBUG "__blkdev_get; return ret;\n");
 	return ret;
 }
 
