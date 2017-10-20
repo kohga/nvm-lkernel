@@ -33,10 +33,6 @@ if [ "${USER}" = "root" ]; then
 	makedir ${NVM_DIR}
 	makedir ${DATE_DIR}
 
-	mvfile $SYSTEM "System.map-3.12.49"
-	mvfile $CONFIG "config-3.12.49"
-	mvfile $INITRD "initrd-3.12.49"
-	mvfile $VMLINUZ "vmlinuz-3.12.49"
 
 	cd ${TARGET_DIR}
 	echo "===== make -j4 ====="
@@ -45,6 +41,12 @@ if [ "${USER}" = "root" ]; then
 	make modules
 	echo "===== make modules_install ====="
 	make modules_install
+
+	mvfile $SYSTEM "System.map-3.12.49"
+	mvfile $CONFIG "config-3.12.49"
+	mvfile $INITRD "initrd-3.12.49"
+	mvfile $VMLINUZ "vmlinuz-3.12.49"
+
 	echo "===== make install ====="
 	make install
 	cd ..

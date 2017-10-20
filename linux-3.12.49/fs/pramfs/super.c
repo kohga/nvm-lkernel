@@ -346,9 +346,9 @@ static journal_t *pram_get_dev_journal(struct super_block *sb,
 	unsigned long len;
 	unsigned long blocksize;
 
-	bdev = pram_blkdev_get(j_dev, sb);
-	if (bdev == NULL)
-		return NULL;
+	//bdev = pram_blkdev_get(j_dev, sb);
+	//if (bdev == NULL)
+	//	return NULL;
 
 #if 0
 	blocksize = sb->s_blocksize;
@@ -397,6 +397,7 @@ static journal_t *pram_get_dev_journal(struct super_block *sb,
 	pram_info("kohga; len = %lu \n",len);
 	pram_info("kohga; blocksize = %lu \n",blocksize);
 
+	bdev = NULL;
 	journal = journal_init_dev(bdev, sb->s_bdev,
 					start, len, blocksize);
 	if (!journal) {
@@ -500,8 +501,15 @@ static int pram_load_journal(struct super_block *sb,
 	    journal_devnum != le32_to_cpu(es->s_journal_dev)) {
 		pram_info("external journal device major/minor numbers have changed\n");
 		journal_dev = new_decode_dev(journal_devnum);
-	} else
+	} else {
 		journal_dev = new_decode_dev(le32_to_cpu(es->s_journal_dev));
+		pram_info("kohga; journal_dev = %d\n",journal_dev);
+		pram_info("kohga; journal_dev = %p\n",journal_dev);
+		pram_info("kohga; journal_dev = %x\n",journal_dev);
+		pram_info("kohga; sb->s_bdev = %d\n",sb->s_bdev);
+		pram_info("kohga; sb->s_bdev = %p\n",sb->s_bdev);
+		pram_info("kohga; sb->s_bdev = %x\n",sb->s_bdev);
+	}
 
 	really_read_only = bdev_read_only(sb->s_bdev);
 
@@ -1689,6 +1697,7 @@ static struct dentry *pram_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
 	return mount_nodev(fs_type, flags, data, pram_fill_super);
+	//return mount_bdev(fs_type, flags, dev_name, data, pram_fill_super);
 }
 
 static struct file_system_type pram_fs_type = {

@@ -2321,9 +2321,15 @@ static int ext3_load_journal(struct super_block *sb,
 		ext3_msg(sb, KERN_INFO, "external journal device major/minor "
 			"numbers have changed");
 		journal_dev = new_decode_dev(journal_devnum);
-	} else
+	} else {
 		journal_dev = new_decode_dev(le32_to_cpu(es->s_journal_dev));
-
+		ext3_msg(sb, KERN_INFO, "kohga; journal_dev = %d ",journal_dev);
+		ext3_msg(sb, KERN_INFO, "kohga; journal_dev = %p ",journal_dev);
+		ext3_msg(sb, KERN_INFO, "kohga; journal_dev = %x ",journal_dev);
+		ext3_msg(sb, KERN_INFO, "kohga; journal_dev = %d ",sb->s_bdev);
+		ext3_msg(sb, KERN_INFO, "kohga; journal_dev = %p ",sb->s_bdev);
+		ext3_msg(sb, KERN_INFO, "kohga; journal_dev = %x ",sb->s_bdev);
+	}
 	really_read_only = bdev_read_only(sb->s_bdev);
 
 	/*
