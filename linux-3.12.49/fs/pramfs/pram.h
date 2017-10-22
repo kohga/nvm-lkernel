@@ -20,12 +20,7 @@
 #include <linux/mutex.h>
 #include <linux/rcupdate.h>
 #include <linux/types.h>
-#include <linux/jbd.h>   // kohga_hack
 #include "wprotect.h"
-
-#define KOHGA_PRAM_IGET 0x00000001
-extern unsigned long kohga_pram_flag;
-typedef unsigned long pram_fsblk_t;
 
 /*
  * Debug code
@@ -166,11 +161,6 @@ struct pram_inode_vfs {
 #endif
 	struct mutex i_meta_mutex;
 	struct mutex i_link_mutex;
-
-	//kohga hacked
-	atomic_t i_sync_tid;
-	atomic_t i_datasync_tid;
-
 	struct inode vfs_inode;
 };
 
@@ -294,46 +284,3 @@ extern const struct inode_operations pram_symlink_inode_operations;
 extern struct backing_dev_info pram_backing_dev_info;
 
 #endif	/* __PRAM_H */
-
-
-/* kohga_hack for JBD */
-static inline void pram_journal_release_buffer(handle_t *handle,
-								struct buffer_head *bh)
-{
-	journal_release_buffer(handle, bh);
-}
-
-void pram_journal_abort_handle(const char *caller, const char *err_fn,
-				struct buffer_head *bh, handle_t *handle, int err);
-
-int __pram_journal_get_undo_access(const char *where, handle_t *handle,
-						struct buffer_head *bh);
-
-int __pram_journal_get_write_access(const char *where, handle_t *handle,
-						struct buffer_head *bh);
-
-int __pram_journal_forget(const char *where, handle_t *handle,
-						struct buffer_head *bh);
-
-int __pram_journal_revoke(const char *where, handle_t *handle,
-						unsigned long blocknr, struct buffer_head *bh);
-
-int __pram_journal_get_create_access(const char *where,
-						handle_t *handle, struct buffer_head *bh);
-
-int __pram_journal_dirty_metadata(const char *where,
-						handle_t *handle, struct buffer_head *bh);
-
-#define pram_journal_get_undo_access(handle, bh) \
-		__pram_journal_get_undo_access(__func__, (handle), (bh))
-#define pram_journal_get_write_access(handle, bh) \
-		__pram_journal_get_write_access(__func__, (handle), (bh))
-#define pram_journal_revoke(handle, blocknr, bh) \
-		__pram_journal_revoke(__func__, (handle), (blocknr), (bh))
-#define pram_journal_get_create_access(handle, bh) \
-		__pram_journal_get_create_access(__func__, (handle), (bh))
-#define pram_journal_dirty_metadata(handle, bh) \
-		__pram_journal_dirty_metadata(__func__, (handle), (bh))
-#define pram_journal_forget(handle, bh) \
-		__pram_journal_forget(__func__, (handle), (bh))
-
