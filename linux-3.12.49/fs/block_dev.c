@@ -501,10 +501,8 @@ struct block_device *bdget(dev_t dev)
 	inode = iget5_locked(blockdev_superblock, hash(dev),
 			bdev_test, bdev_set, &dev);
 
-	if (!inode){
-		printk(KERN_DEBUG "kohga; bdget; NULL\n");
+	if (!inode)
 		return NULL;
-	}
 
 	bdev = &BDEV_I(inode)->bdev;
 
@@ -721,17 +719,14 @@ static struct block_device *bd_start_claiming(struct block_device *bdev,
 	int partno, err;
 
 	might_sleep();
-	printk(KERN_DEBUG "kohga; bd_start_claiming\n");
 
 	/*
 	 * @bdev might not have been initialized properly yet, look up
 	 * and grab the outer block device the hard way.
 	 */
 	disk = get_gendisk(bdev->bd_dev, &partno);
-	if (!disk){
-		printk(KERN_DEBUG "kohga;  disk is NULL\n");
+	if (!disk)
 		return ERR_PTR(-ENXIO);
-	}
 
 	/*
 	 * Normally, @bdev should equal what's returned from bdget_disk()
@@ -741,20 +736,15 @@ static struct block_device *bd_start_claiming(struct block_device *bdev,
 	 * tracking is broken for those devices but it has always been that
 	 * way.
 	 */
-	if (partno){
-		printk(KERN_DEBUG "kohga;  partno = %d\n",partno);
+	if (partno)
 		whole = bdget_disk(disk, 0);
-	}else{
-		printk(KERN_DEBUG "kohga;  partno is NULL \n");
+	else
 		whole = bdgrab(bdev);
-	}
 
 	module_put(disk->fops->owner);
 	put_disk(disk);
-	if (!whole){
-		printk(KERN_DEBUG "kohga; bd;  whole is NULL\n",whole);
+	if (!whole)
 		return ERR_PTR(-ENOMEM);
-	}
 
 	/* prepare to claim, if successful, mark claiming in progress */
 	spin_lock(&bdev_lock);
@@ -763,12 +753,10 @@ static struct block_device *bd_start_claiming(struct block_device *bdev,
 	if (err == 0) {
 		whole->bd_claiming = holder;
 		spin_unlock(&bdev_lock);
-		printk(KERN_DEBUG "kohga; return  whole = %d\n",whole);
 		return whole;
 	} else {
 		spin_unlock(&bdev_lock);
 		bdput(whole);
-		printk(KERN_DEBUG "kohga; return err whole = %d\n",whole);
 		return ERR_PTR(err);
 	}
 }
@@ -1262,20 +1250,11 @@ int blkdev_get(struct block_device *bdev, fmode_t mode, void *holder)
 		whole = bd_start_claiming(bdev, holder);
 		if (IS_ERR(whole)) {
 			bdput(bdev);
-			printk(KERN_DEBUG "kohga;  blkdev_get; ERR_PTR(whole)\n");
 			return PTR_ERR(whole);
 		}
 	}
 
 	res = __blkdev_get(bdev, mode, 0);
-	if(!res){
-		printk(KERN_DEBUG "kohga;  res is NULL\n");
-	}else{
-		printk(KERN_DEBUG "kohga;  res\n");
-	}
-
-	printk(KERN_DEBUG "kohga;  res = %d\n",res);
-	printk(KERN_DEBUG "kohga;  whole = %d\n",whole);
 
 	if (whole) {
 		struct gendisk *disk = whole->bd_disk;
@@ -1284,7 +1263,6 @@ int blkdev_get(struct block_device *bdev, fmode_t mode, void *holder)
 		mutex_lock(&bdev->bd_mutex);
 		spin_lock(&bdev_lock);
 
-		printk(KERN_DEBUG "kohga;  res2\n");
 		if (!res) {
 			BUG_ON(!bd_may_claim(bdev, whole, holder));
 			/*
@@ -1297,7 +1275,6 @@ int blkdev_get(struct block_device *bdev, fmode_t mode, void *holder)
 			whole->bd_holder = bd_may_claim;
 			bdev->bd_holders++;
 			bdev->bd_holder = holder;
-			printk(KERN_DEBUG "kohga;  res3\n");
 		}
 
 		/* tell others that we're done */
@@ -1318,14 +1295,11 @@ int blkdev_get(struct block_device *bdev, fmode_t mode, void *holder)
 		    (disk->flags & GENHD_FL_BLOCK_EVENTS_ON_EXCL_WRITE)) {
 			bdev->bd_write_holder = true;
 			disk_block_events(disk);
-			printk(KERN_DEBUG "kohga;  res4\n");
 		}
 
 		mutex_unlock(&bdev->bd_mutex);
 		bdput(whole);
 	}
-
-	printk(KERN_DEBUG "kohga; return  res!! \n");
 
 	return res;
 }
@@ -1399,16 +1373,12 @@ struct block_device *blkdev_get_by_dev(dev_t dev, fmode_t mode, void *holder)
 	int err;
 
 	bdev = bdget(dev);
-	if (!bdev){
-		printk(KERN_DEBUG "kohga;  ERR_PTR(-ENOMEM)\n");
+	if (!bdev)
 		return ERR_PTR(-ENOMEM);
-	}
 
 	err = blkdev_get(bdev, mode, holder);
-	if (err){
-		printk(KERN_DEBUG "kohga;  ERR_PTR(err)  err = %d \n",err);
+	if (err)
 		return ERR_PTR(err);
-	}
 
 	return bdev;
 }
