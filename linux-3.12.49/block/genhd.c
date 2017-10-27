@@ -681,27 +681,22 @@ EXPORT_SYMBOL(del_gendisk);
 struct gendisk *get_gendisk(dev_t devt, int *partno)
 {
 	struct gendisk *disk = NULL;
-	printk("kohga; get_gendisk; 1 ");
 
 	if (MAJOR(devt) != BLOCK_EXT_MAJOR) {
 		struct kobject *kobj;
-		printk("kohga; get_gendisk; 2 ");
 
 		kobj = kobj_lookup(bdev_map, devt, partno);
 		if (kobj){
-			printk("kohga; get_gendisk; 3 ");
 			disk = dev_to_disk(kobj_to_dev(kobj));
 		}
 	} else {
 		struct hd_struct *part;
-		printk("kohga; get_gendisk; 4 ");
 
 		spin_lock_bh(&ext_devt_lock);
 		part = idr_find(&ext_devt_idr, blk_mangle_minor(MINOR(devt)));
 		if (part && get_disk(part_to_disk(part))) {
 			*partno = part->partno;
 			disk = part_to_disk(part);
-			printk("kohga; get_gendisk; 5 ");
 		}
 		spin_unlock_bh(&ext_devt_lock);
 	}
