@@ -7,7 +7,18 @@ This project is a Linux Kernel for high-speed nonvolatile memory.
 I have improved for high-speed nonvolatile memory based on Linux-3.12.49 source code.   
 
 
-## How to
+
+## Required Package
+- gcc   
+- make   
+- bc   
+- build-essential   
+- kernel-package   
+- libncurses5-dev   
+- libqt3-mt-dev   
+(``# apt install ***`` or ``# yum install ***`` )
+
+## How To
 Build and Boot NVM-LKernel   
 ```
 # ./do.sh   
