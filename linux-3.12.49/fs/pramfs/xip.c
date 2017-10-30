@@ -23,6 +23,7 @@
 ssize_t pram_xip_file_read(struct file *filp, char __user *buf,
 					size_t len, loff_t *ppos)
 {
+	pram_info("kohga; pram_xip_file_read\n");
 	ssize_t res;
 	rcu_read_lock();
 	res = xip_file_read(filp, buf, len, ppos);
@@ -32,6 +33,7 @@ ssize_t pram_xip_file_read(struct file *filp, char __user *buf,
 
 static int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
+	pram_info("kohga; pram_xip_file_fault\n");
 	int ret = 0;
 	rcu_read_lock();
 	ret = xip_file_fault(vma, vmf);
@@ -40,14 +42,14 @@ static int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 }
 
 static const struct vm_operations_struct pram_xip_vm_ops = {
-	.fault	= pram_xip_file_fault,
+	.fault = pram_xip_file_fault,
 	.page_mkwrite = filemap_page_mkwrite,
-        .remap_pages = generic_file_remap_pages,
+	.remap_pages = generic_file_remap_pages,
 };
 
 int pram_xip_file_mmap(struct file * file, struct vm_area_struct * vma)
 {
-	printk(KERN_DEBUG "kohga;pram_xip_file_mmap\n");
+	pram_info("kohga; pram_xip_file_mmap\n");
 	BUG_ON(!file->f_mapping->a_ops->get_xip_mem);
 
 	file_accessed(file);
@@ -59,6 +61,7 @@ int pram_xip_file_mmap(struct file * file, struct vm_area_struct * vma)
 static int pram_find_and_alloc_blocks(struct inode *inode, sector_t iblock,
 				     sector_t *data_block, int create)
 {
+	pram_info("kohga; pram_find_and_alloc_blocks\n");
 	int err = -EIO;
 	u64 block;
 
@@ -91,6 +94,7 @@ static int pram_find_and_alloc_blocks(struct inode *inode, sector_t iblock,
 static inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
 				   int create, sector_t *result)
 {
+	pram_info("kohga; __pram_get_block\n");
 	int rc = 0;
 
 	rc = pram_find_and_alloc_blocks(inode, (sector_t)pgoff, result, create);
@@ -104,6 +108,7 @@ static inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
 int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		     void **kmem, unsigned long *pfn)
 {
+	pram_info("kohga; pram_get_xip_mem\n");
 	int rc;
 	sector_t block = 0;
 
