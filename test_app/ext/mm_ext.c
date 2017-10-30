@@ -13,14 +13,11 @@
 #include <sys/syscall.h>
 
 #define SYS_kohga_syscall  314
-#define NUMBER 1
 
-int main(){
-
-	unsigned long page_num=12000, psize, size, i, max;
+void main(){
+	unsigned long page_num=8, psize, size, i, max;
 	int   fd, val=1, *mapp;
 	char c=0,buf_sys[256];
-	char   *ptr, *buf="ZZZZZ";
 	clock_t start, end;
 	struct timeval s, e;
 
@@ -34,8 +31,8 @@ int main(){
 		//printf( "buf = %s\n", buf_sys );
 	}
 
-	if((fd=open("maptxt",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
-	//if((fd=open("maptxt",O_RDWR|O_CREAT,0666))==-1){
+	//if((fd=open("mapfile",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
+	if((fd=open("mapfile",O_RDWR|O_CREAT,0666))==-1){
 		perror("open");
 		exit(401);
 	}
@@ -43,31 +40,32 @@ int main(){
 	psize=sysconf(_SC_PAGE_SIZE);  // get page_size (if it is notBSD)
 	//printf("psize = %lu\n",psize);
 
-
-	size=(NUMBER*sizeof(char)/psize+1)*psize;
+	size = psize * page_num;
 	printf("mmap size = %lu K\n",(size/1024));
-/*
+
 	if(lseek(fd,size,SEEK_SET)<0){
 		perror("lseek");
 		exit(402);
 	}
 	if(write(fd,&c,sizeof(char))==-1){
 		perror("write");
-		exit(403);
+		exit(-1);
 	}
-*/
-	//ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
-	ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);
-	if(ptr ==(char *)-1){
+
+	mapp=(int *)mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	if(mapp==MAP_FAILED){
 		perror("mmap");
 		exit(404);
 	}
 
-	for(i=0;i<NUMBER;i++){
-		strcpy(ptr,buf);
+	max = size / sizeof(int);
+	for(i=0; i<max; i++){
+		mapp[i] = val;
 	}
 
-	if(munmap(ptr,size)==-1){
+	msync(mapp,size,0);
+
+	if(munmap(mapp,size)==-1){
 		perror("munmap");
 		exit(405);
 	}
