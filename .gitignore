@@ -107,5 +107,9 @@ vmlinux
 
 mmpram
 mmtxtpram
+mlupram
 mapfile
-map.txt
+mmext
+mmtxtext
+mluext
+workspace/*
