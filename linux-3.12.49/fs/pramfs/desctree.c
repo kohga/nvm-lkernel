@@ -22,6 +22,7 @@
  */
 void xblock_desc_init_always(struct pram_xblock_desc *desc)
 {
+	pram_info("desctree.c / xblock_desc_init_always\n");
 	atomic_set(&desc->refcount, 0);
 	desc->blocknr = 0;
 	desc->flags = 0;
@@ -35,6 +36,7 @@ void xblock_desc_init_always(struct pram_xblock_desc *desc)
  */
 void xblock_desc_init_once(struct pram_xblock_desc *desc)
 {
+	pram_info("desctree.c / xblock_desc_init_once\n");
 	mutex_init(&desc->lock);
 }
 
@@ -45,6 +47,7 @@ void xblock_desc_init_once(struct pram_xblock_desc *desc)
 static void __insert_xblock_desc(struct pram_sb_info *sbi,
 				 unsigned long blocknr, struct rb_node *node)
 {
+	pram_info("desctree.c / __insert_xblock_desc\n");
 	struct rb_node **p = &(sbi->desc_tree.rb_node);
 	struct rb_node *parent = NULL;
 	struct pram_xblock_desc *desc;
@@ -68,6 +71,7 @@ static void __insert_xblock_desc(struct pram_sb_info *sbi,
 
 void insert_xblock_desc(struct pram_sb_info *sbi, struct pram_xblock_desc *desc)
 {
+	pram_info("desctree.c / insert_xblock_desc\n");
 	spin_lock(&sbi->desc_tree_lock);
 	__insert_xblock_desc(sbi, desc->blocknr, &desc->node);
 	spin_unlock(&sbi->desc_tree_lock);
@@ -84,6 +88,7 @@ static struct pram_xblock_desc *__lookup_xblock_desc(struct pram_sb_info *sbi,
 					    struct kmem_cache *cache,
 					    int create)
 {
+	pram_info("desctree.c / __lookup_xblock_desc\n");
 	struct rb_node *n = sbi->desc_tree.rb_node;
 	struct pram_xblock_desc *desc = NULL;
 
@@ -119,6 +124,7 @@ struct pram_xblock_desc *lookup_xblock_desc(struct pram_sb_info *sbi,
 					    struct kmem_cache *cache,
 					    int create)
 {
+	pram_info("desctree.c / lookup_xblock_desc\n");
 	struct pram_xblock_desc *desc = NULL;
 
 	spin_lock(&sbi->desc_tree_lock);
@@ -135,6 +141,7 @@ struct pram_xblock_desc *lookup_xblock_desc(struct pram_sb_info *sbi,
  */
 int put_xblock_desc(struct pram_sb_info *sbi, struct pram_xblock_desc *desc)
 {
+	pram_info("desctree.c / put_xblock_desc\n");
 	int ret = 1;
 	if (!desc)
 		return ret;
@@ -157,6 +164,7 @@ int put_xblock_desc(struct pram_sb_info *sbi, struct pram_xblock_desc *desc)
  */
 void mark_free_desc(struct pram_xblock_desc *desc)
 {
+	pram_info("desctree.c / mark_free_desc\n");
 	set_bit(FREEING, &desc->flags);
 }
 
@@ -166,6 +174,7 @@ void mark_free_desc(struct pram_xblock_desc *desc)
  */
 void erase_tree(struct pram_sb_info *sbi, struct kmem_cache *cachep)
 {
+	pram_info("desctree.c / erase_tree\n");
 	struct rb_node *n;
 	struct pram_xblock_desc *desc;
 

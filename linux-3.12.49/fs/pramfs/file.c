@@ -35,6 +35,7 @@
 static size_t __pram_iov_copy_from(char *vaddr,
 			const struct iovec *iov, size_t base, size_t bytes)
 {
+	pram_info("file.c / __pram_iov_copy_from\n");
 	size_t copied = 0, left = 0;
 
 	while (bytes) {
@@ -57,6 +58,7 @@ static size_t __pram_iov_copy_from(char *vaddr,
 static size_t __pram_iov_copy_to(char *vaddr,
 			const struct iovec *iov, size_t base, size_t bytes)
 {
+	pram_info("file.c / __pram_iov_copy_to\n");
 	size_t copied = 0, left = 0;
 
 	while (bytes) {
@@ -78,6 +80,7 @@ static size_t __pram_iov_copy_to(char *vaddr,
 
 static size_t pram_iov_copy_from(void *to, struct iov_iter *i, size_t bytes)
 {
+	pram_info("file.c / pram_iov_copy_fram\n");
 	size_t copied;
 
 	if (likely(i->nr_segs == 1)) {
@@ -94,6 +97,7 @@ static size_t pram_iov_copy_from(void *to, struct iov_iter *i, size_t bytes)
 
 static size_t pram_iov_copy_to(void *from, struct iov_iter *i, size_t bytes)
 {
+	pram_info("file.c / pram_iov_copy_to\n");
 	size_t copied;
 
 	if (likely(i->nr_segs == 1)) {
@@ -111,6 +115,7 @@ static size_t pram_iov_copy_to(void *from, struct iov_iter *i, size_t bytes)
 static size_t __pram_clear_user(const struct iovec *iov, size_t base,
 				size_t bytes)
 {
+	pram_info("file.c / __pram_clear_user\n");
 	size_t claened = 0, left = 0;
 
 	while (bytes) {
@@ -131,6 +136,7 @@ static size_t __pram_clear_user(const struct iovec *iov, size_t base,
 
 static size_t pram_clear_user(struct iov_iter *i, size_t bytes)
 {
+	pram_info("file.c / pram_clear_user\n");
 	size_t clear;
 
 	if (likely(i->nr_segs == 1)) {
@@ -147,6 +153,7 @@ static size_t pram_clear_user(struct iov_iter *i, size_t bytes)
 
 static int pram_open_file(struct inode *inode, struct file *filp)
 {
+	pram_info("file.c / (struct file_operations)pram_file_operations..open = pram_open_file\n");
 	filp->f_flags |= O_DIRECT;
 	return generic_file_open(inode, filp);
 }
@@ -155,6 +162,7 @@ ssize_t pram_direct_IO(int rw, struct kiocb *iocb,
 		   const struct iovec *iov,
 		   loff_t offset, unsigned long nr_segs)
 {
+	pram_info("file.c / (struct address_space_operations)pram_aops..direct_IO = pram_direct_IO\n");
 	struct file *file = iocb->ki_filp;
 	struct inode *inode = file->f_mapping->host;
 	struct super_block *sb = inode->i_sb;
@@ -166,7 +174,6 @@ ssize_t pram_direct_IO(int rw, struct kiocb *iocb,
 	size_t length = iov_length(iov, nr_segs);
 	loff_t size;
 
-	printk(KERN_DEBUG "pram_direct_IO\n");
 
 	/*
 	 * If we are in the write path we are under i_mutex but no lock held
@@ -283,6 +290,7 @@ ssize_t pram_direct_IO(int rw, struct kiocb *iocb,
 
 static int pram_check_flags(int flags)
 {
+	pram_info("file.c / (struct file_operations)pram_file_operations..check_flags = pram_check_flags\n");
 	if (!(flags & O_DIRECT))
 		return -EINVAL;
 
@@ -292,6 +300,7 @@ static int pram_check_flags(int flags)
 static long pram_fallocate(struct file *file, int mode, loff_t offset,
 			   loff_t len)
 {
+	pram_info("file.c / (struct file_operations)pram_xip_file_operations..fallocate = pram_fallocatek\n");
 	struct inode *inode = file_inode(file);
 	long ret = 0;
 	unsigned long blocknr, blockoff;
@@ -346,6 +355,7 @@ static long pram_fallocate(struct file *file, int mode, loff_t offset,
 
 loff_t pram_llseek(struct file *file, loff_t offset, int origin)
 {
+	pram_info("file.c / (struct file_operations)pram_xip_file_operations..llseek = pram_llseek\n");
 	struct inode *inode = file->f_mapping->host;
 	int retval;
 
@@ -376,54 +386,52 @@ loff_t pram_llseek(struct file *file, loff_t offset, int origin)
 	return offset;
 }
 
-//
+
+// kohga_hack
 int pram_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
-        int ret = 0;
-        printk(KERN_DEBUG "pram_file_fault\n");
-        //vma->vm_flags &= ~VM_SHARED;
-        ret = filemap_fault(vma, vmf);
-        //printk(KERN_DEBUG ";%x \n",ret);
-        return ret;
+	pram_info("file.c / (struct vm_operations_struct)pram_file_vm_ops..fault = pram_file_fault\n");
+	int ret = 0;
+	//vma->vm_flags &= ~VM_SHARED;
+	ret = filemap_fault(vma, vmf);
+	return ret;
 }
 
 int pram_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
-        int ret;
-        printk(KERN_DEBUG "pram_mkwrite\n");
-        ret = filemap_page_mkwrite(vma,vmf);
-        //printk(KERN_DEBUG ";%x \n",ret);
-        return ret;
+	pram_info("file.c / (struct vm_operations_struct)pram_file_vm_ops..page_mkwrite = pram_mkwrite\n");
+	int ret;
+	ret = filemap_page_mkwrite(vma,vmf);
+	return ret;
 }
 
 int pram_remap(struct vm_area_struct *vma, unsigned long addr,
-                             unsigned long size, pgoff_t pgoff)
+			unsigned long size, pgoff_t pgoff)
 {
-        int ret;
-        printk(KERN_DEBUG "pram_remap\n");
-        ret = generic_file_remap_pages(vma,addr,size,pgoff);
-        //printk(KERN_DEBUG ";%x \n",ret);
-        return ret;
+	pram_info("file.c / (struct vm_operations_struct)pram_file_vm_ops..remap_pages = pram_remap\n");
+	int ret;
+	ret = generic_file_remap_pages(vma,addr,size,pgoff);
+	return ret;
 }
 
 static const struct vm_operations_struct pram_file_vm_ops = {
-        .fault  = pram_file_fault,
-        .page_mkwrite = pram_mkwrite,
-        .remap_pages = pram_remap,
+	.fault  = pram_file_fault,
+	.page_mkwrite = pram_mkwrite,
+	.remap_pages = pram_remap,
 };
 
 int pram_file_mmap(struct file * file, struct vm_area_struct * vma)
 {
-        struct address_space *mapping = file->f_mapping;
-        printk(KERN_DEBUG "pram_file_mmap\n");
+	pram_info("file.c / (struct file_operations)pram_file_operations..mmap = pram_file_mmap\n");
+	struct address_space *mapping = file->f_mapping;
 
-        if (!mapping->a_ops->readpage)
-               return -ENOEXEC;
-        file_accessed(file);
-        vma->vm_ops = &pram_file_vm_ops;
-        return 0;
+	if (!mapping->a_ops->readpage)
+		return -ENOEXEC;
+	file_accessed(file);
+	vma->vm_ops = &pram_file_vm_ops;
+	return 0;
 }
-//
+// kohga_hack
 
 const struct file_operations pram_file_operations = {
 	.llseek		= pram_llseek,

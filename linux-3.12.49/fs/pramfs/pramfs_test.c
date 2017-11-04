@@ -19,6 +19,7 @@
 
 int __init test_pramfs_write(void)
 {
+	pram_info("pramfs_test.c\n");
 	struct pram_super_block *psb;
 
 	psb = get_pram_super();

@@ -25,6 +25,7 @@ static size_t pram_xattr_trusted_list(struct dentry *dentry, char *list,
 				size_t list_size, const char *name,
 				size_t name_len, int type)
 {
+	pram_info("xattr_trusted.c\n");
 	const int prefix_len = XATTR_TRUSTED_PREFIX_LEN;
 	const size_t total_len = prefix_len + name_len + 1;
 
@@ -42,6 +43,7 @@ static size_t pram_xattr_trusted_list(struct dentry *dentry, char *list,
 static int pram_xattr_trusted_get(struct dentry *dentry, const char *name,
 				void *buffer, size_t size, int type)
 {
+	pram_info("xattr_trusted.c\n");
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
 	return pram_xattr_get(dentry->d_inode, PRAM_XATTR_INDEX_TRUSTED, name,
@@ -51,6 +53,7 @@ static int pram_xattr_trusted_get(struct dentry *dentry, const char *name,
 static int pram_xattr_trusted_set(struct dentry *dentry, const char *name,
 		const void *value, size_t size, int flags, int type)
 {
+	pram_info("xattr_trusted.c\n");
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
 	return pram_xattr_set(dentry->d_inode, PRAM_XATTR_INDEX_TRUSTED, name,

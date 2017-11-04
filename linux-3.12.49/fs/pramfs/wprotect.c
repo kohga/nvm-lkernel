@@ -20,6 +20,7 @@
 
 void pram_writeable(void *vaddr, unsigned long size, int rw)
 {
+	pram_info("wprotect.c / pram_writeable\n");
 	int ret = 0;
 	unsigned long nrpages = size >> PAGE_SHIFT;
 	unsigned long addr = (unsigned long)vaddr;

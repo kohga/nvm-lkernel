@@ -19,6 +19,7 @@
 
 long pram_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
+	pram_info("ioctl.c / pram_ioctl\n");
 	struct inode *inode = file_inode(filp);
 	struct pram_inode *pi;
 	unsigned int flags;
@@ -106,6 +107,7 @@ setversion_out:
 #ifdef CONFIG_COMPAT
 long pram_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
+	pram_info("ioctl.c / pram_compat_ioctl\n");
 	switch (cmd) {
 	case FS_IOC32_GETFLAGS:
 		cmd = FS_IOC_GETFLAGS;

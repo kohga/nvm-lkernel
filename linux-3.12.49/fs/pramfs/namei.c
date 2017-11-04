@@ -24,12 +24,14 @@
 
 static inline void pram_inc_count(struct inode *inode)
 {
+	pram_info("ioctl.c / pram_inc_count\n");
 	inc_nlink(inode);
 	pram_write_inode(inode, NULL);
 }
 
 static inline void pram_dec_count(struct inode *inode)
 {
+	pram_info("ioctl.c / pram_dec_count\n");
 	if (inode->i_nlink) {
 		drop_nlink(inode);
 		pram_write_inode(inode, NULL);
@@ -40,6 +42,7 @@ static inline int pram_add_nondir(struct inode *dir,
 				   struct dentry *dentry,
 				   struct inode *inode)
 {
+	pram_info("ioctl.c / pram_add_nondir\n");
 	int err = pram_add_link(dentry, inode);
 	if (!err) {
 		unlock_new_inode(inode);
@@ -58,6 +61,7 @@ static inline int pram_add_nondir(struct inode *dir,
 
 static ino_t pram_inode_by_name(struct inode *dir, struct dentry *dentry)
 {
+	pram_info("ioctl.c / pram_inode_by_name\n");
 	struct pram_inode *pi;
 	ino_t ino;
 	int namelen;
@@ -87,6 +91,7 @@ static ino_t pram_inode_by_name(struct inode *dir, struct dentry *dentry)
 static struct dentry *pram_lookup(struct inode *dir, struct dentry *dentry,
 				  unsigned int flags)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..lookup = pram_lookup\n");
 	struct inode *inode = NULL;
 	ino_t ino;
 
@@ -119,6 +124,7 @@ static struct dentry *pram_lookup(struct inode *dir, struct dentry *dentry,
 static int pram_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		       bool flags)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..create = pram_create\n");
 	struct inode *inode = pram_new_inode(dir, mode, &dentry->d_name);
 	int err = PTR_ERR(inode);
 	if (!IS_ERR(inode)) {
@@ -137,6 +143,7 @@ static int pram_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 
 static int pram_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..tmpfile = pram_tmpfile\n");
 	struct inode *inode = pram_new_inode(dir, mode, NULL);
 	if (IS_ERR(inode))
 		return PTR_ERR(inode);
@@ -157,6 +164,7 @@ static int pram_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
 static int pram_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 		      dev_t rdev)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..mknod = pram_mknod\n");
 	struct inode *inode = pram_new_inode(dir, mode, &dentry->d_name);
 	int err = PTR_ERR(inode);
 	if (!IS_ERR(inode)) {
@@ -171,6 +179,7 @@ static int pram_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 static int pram_symlink(struct inode *dir, struct dentry *dentry,
 			const char *symname)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..symlink = pram_symlink\n");
 	struct super_block *sb = dir->i_sb;
 	int err = -ENAMETOOLONG;
 	unsigned len = strlen(symname);
@@ -208,12 +217,14 @@ out_fail:
 static int pram_link(struct dentry *dest_dentry, struct inode *dir,
 		     struct dentry *dentry)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..link = pram_link\n");
 	pram_dbg("hard links not supported\n");
 	return -EOPNOTSUPP;
 }
 
 static int pram_unlink(struct inode *dir, struct dentry *dentry)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..unlink = pram_unlink\n");
 	struct inode *inode = dentry->d_inode;
 	inode->i_ctime = dir->i_ctime;
 	pram_dec_count(inode);
@@ -222,6 +233,7 @@ static int pram_unlink(struct inode *dir, struct dentry *dentry)
 
 static int pram_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..mkdir = pram_mkdir\n");
 	struct inode *inode;
 	struct pram_inode *pi;
 	int err = 0;
@@ -266,6 +278,7 @@ out_dir:
 
 static int pram_rmdir(struct inode *dir, struct dentry *dentry)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..rmdir = pram_rmdir\n");
 	struct inode *inode = dentry->d_inode;
 	struct pram_inode *pi;
 	int err = -ENOTEMPTY;
@@ -295,6 +308,7 @@ static int pram_rename(struct inode  *old_dir,
 			struct inode  *new_dir,
 			struct dentry *new_dentry)
 {
+	pram_info("ioctl.c / (struct inode_operations)pram_dir_inode_operations..rename = pram_rename\n");
 	struct inode *old_inode = old_dentry->d_inode;
 	struct inode *new_inode = new_dentry->d_inode;
 	struct pram_inode *pi_new;
@@ -336,6 +350,7 @@ static int pram_rename(struct inode  *old_dir,
 
 struct dentry *pram_get_parent(struct dentry *child)
 {
+	pram_info("namei.c / pram_get_parent\n");
 	struct inode *inode;
 	struct pram_inode *pi, *piparent;
 	ino_t ino;

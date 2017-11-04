@@ -24,6 +24,7 @@ static size_t pram_xattr_user_list(struct dentry *dentry, char *list,
 				   size_t list_size, const char *name,
 				   size_t name_len, int type)
 {
+	pram_info("xattr_user.c\n");
 	const size_t prefix_len = XATTR_USER_PREFIX_LEN;
 	const size_t total_len = prefix_len + name_len + 1;
 
@@ -41,6 +42,7 @@ static size_t pram_xattr_user_list(struct dentry *dentry, char *list,
 static int pram_xattr_user_get(struct dentry *dentry, const char *name,
 		void *buffer, size_t size, int type)
 {
+	pram_info("xattr_user.c\n");
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
 	if (!test_opt(dentry->d_sb, XATTR_USER))
@@ -52,6 +54,7 @@ static int pram_xattr_user_get(struct dentry *dentry, const char *name,
 static int pram_xattr_user_set(struct dentry *dentry, const char *name,
 		const void *value, size_t size, int flags, int type)
 {
+	pram_info("xattr_user.c\n");
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
 	if (!test_opt(dentry->d_sb, XATTR_USER))

@@ -18,6 +18,7 @@
 
 void pram_bitmap_fill(unsigned long *dst, int nbits)
 {
+	pram_info("balloc.c / pram_bitmap_fill\n");
 	size_t nlongs = BITS_TO_LONGS(nbits);
 	if (!small_const_nbits(nbits)) {
 		int len = (nlongs - 1) * sizeof(unsigned long);
@@ -35,6 +36,7 @@ void pram_bitmap_fill(unsigned long *dst, int nbits)
  */
 void pram_init_bitmap(struct super_block *sb)
 {
+	pram_info("balloc.c / pram_init_bitmap\n");
 	struct pram_super_block *ps = pram_get_super(sb);
 	unsigned long *bitmap = pram_get_bitmap(sb);
 	int blocks = be32_to_cpu(ps->s_bitmap_blocks);
@@ -48,6 +50,7 @@ void pram_init_bitmap(struct super_block *sb)
 /* Free absolute blocknr */
 void pram_free_block(struct super_block *sb, unsigned long blocknr)
 {
+	pram_info("balloc.c / pram_free_block\n");
 	struct pram_super_block *ps;
 	u64 bitmap_block;
 	unsigned long bitmap_bnr;
@@ -88,6 +91,7 @@ void pram_free_block(struct super_block *sb, unsigned long blocknr)
  */
 int pram_new_block(struct super_block *sb, unsigned long *blocknr, int zero)
 {
+	pram_info("balloc.c / pram_new_block\n");
 	struct pram_super_block *ps;
 	u64 bitmap_block;
 	unsigned long bnr, bitmap_bnr;
@@ -155,6 +159,7 @@ int pram_new_block(struct super_block *sb, unsigned long *blocknr, int zero)
 
 unsigned long pram_count_free_blocks(struct super_block *sb)
 {
+	pram_info("balloc.c / pram_count_free_blocks\n");
 	struct pram_super_block *ps = pram_get_super(sb);
 	return be32_to_cpu(ps->s_free_blocks_count);
 }

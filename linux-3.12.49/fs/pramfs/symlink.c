@@ -19,6 +19,7 @@
 
 int pram_block_symlink(struct inode *inode, const char *symname, int len)
 {
+	pram_info("symlink.c / pram_block_symlink\n");
 	struct super_block *sb = inode->i_sb;
 	u64 block;
 	char *blockp;
@@ -40,6 +41,7 @@ int pram_block_symlink(struct inode *inode, const char *symname, int len)
 
 static int pram_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 {
+	pram_info("symlink.c / (struct inode_operations)pram_symlink_inode_operations..readlink = pram_readlink\n");
 	struct inode *inode = dentry->d_inode;
 	struct super_block *sb = inode->i_sb;
 	u64 block;
@@ -52,6 +54,7 @@ static int pram_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 
 static void *pram_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
+	pram_info("symlink.c / (struct inode_operations)pram_symlink_inode_operations..follow_link = pram_follow_link\n");
 	struct inode *inode = dentry->d_inode;
 	struct super_block *sb = inode->i_sb;
 	off_t block;

@@ -21,6 +21,7 @@ static size_t pram_xattr_security_list(struct dentry *dentry, char *list,
 				       size_t list_size, const char *name,
 				       size_t name_len, int type)
 {
+	pram_info("xattr_security.c\n");
 	const int prefix_len = XATTR_SECURITY_PREFIX_LEN;
 	const size_t total_len = prefix_len + name_len + 1;
 
@@ -35,6 +36,7 @@ static size_t pram_xattr_security_list(struct dentry *dentry, char *list,
 static int pram_xattr_security_get(struct dentry *dentry, const char *name,
 		       void *buffer, size_t size, int type)
 {
+	pram_info("xattr_security.c\n");
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
 	return pram_xattr_get(dentry->d_inode, PRAM_XATTR_INDEX_SECURITY, name,
@@ -44,6 +46,7 @@ static int pram_xattr_security_get(struct dentry *dentry, const char *name,
 static int pram_xattr_security_set(struct dentry *dentry, const char *name,
 		const void *value, size_t size, int flags, int type)
 {
+	pram_info("xattr_security.c\n");
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
 	return pram_xattr_set(dentry->d_inode, PRAM_XATTR_INDEX_SECURITY, name,
@@ -53,6 +56,7 @@ static int pram_xattr_security_set(struct dentry *dentry, const char *name,
 int pram_initxattrs(struct inode *inode, const struct xattr *xattr_array,
 		    void *fs_info)
 {
+	pram_info("xattr_security.c\n");
 	const struct xattr *xattr;
 	int err = 0;
 	for (xattr = xattr_array; xattr->name != NULL; xattr++) {
@@ -68,6 +72,7 @@ int pram_initxattrs(struct inode *inode, const struct xattr *xattr_array,
 int pram_init_security(struct inode *inode, struct inode *dir,
 		       const struct qstr *qstr)
 {
+	pram_info("xattr_security.c\n");
 	return security_inode_init_security(inode, dir, qstr,
 					    &pram_initxattrs, NULL);
 }

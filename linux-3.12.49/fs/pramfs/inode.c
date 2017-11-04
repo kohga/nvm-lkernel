@@ -35,6 +35,7 @@ struct backing_dev_info pram_backing_dev_info __read_mostly = {
 static int pram_new_data_block(struct inode *inode, unsigned long *blocknr,
 			       int zero)
 {
+	pram_info("inode.c / pram_new_data_block\n");
 	int errval = pram_new_block(inode->i_sb, blocknr, zero);
 
 	if (!errval) {
@@ -55,6 +56,7 @@ static int pram_new_data_block(struct inode *inode, unsigned long *blocknr,
  */
 u64 pram_find_data_block(struct inode *inode, unsigned long file_blocknr)
 {
+	pram_info("inode.c / pram_find_data_block\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_inode *pi;
 	u64 *row; /* ptr to row block */
@@ -84,6 +86,7 @@ u64 pram_find_data_block(struct inode *inode, unsigned long file_blocknr)
  */
 int pram_find_region(struct inode *inode, loff_t *offset, int hole)
 {
+	pram_info("inode.c / pram_find_region\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_inode *pi = pram_get_inode(sb, inode->i_ino);
 	int N = sb->s_blocksize >> 3; /* num block ptrs per block */
@@ -186,6 +189,7 @@ int pram_find_region(struct inode *inode, loff_t *offset, int hole)
 static void __pram_truncate_blocks(struct inode *inode, loff_t start,
 				   loff_t end)
 {
+	pram_info("inode.c / __pram_truncate_blocks\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_inode *pi = pram_get_inode(sb, inode->i_ino);
 	int N = sb->s_blocksize >> 3; /* num block ptrs per block */
@@ -283,6 +287,7 @@ static void pram_truncate_blocks(struct inode *inode, loff_t start, loff_t end)
  */
 int pram_alloc_blocks(struct inode *inode, int file_blocknr, unsigned int num)
 {
+	pram_info("inode.c / pram_alloc_blocks\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_inode *pi = pram_get_inode(sb, inode->i_ino);
 	int N = sb->s_blocksize >> 3; /* num block ptrs per block */
@@ -371,6 +376,7 @@ int pram_alloc_blocks(struct inode *inode, int file_blocknr, unsigned int num)
 
 static int pram_read_inode(struct inode *inode, struct pram_inode *pi)
 {
+	pram_info("inode.c / pram_read_inode\n");
 	int ret = -EIO;
 
 	mutex_lock(&PRAM_I(inode)->i_meta_mutex);
@@ -443,6 +449,7 @@ static int pram_read_inode(struct inode *inode, struct pram_inode *pi)
 
 int pram_update_inode(struct inode *inode)
 {
+	pram_info("inode.c / pram_update_inode\n");
 	struct pram_inode *pi;
 	int retval = 0;
 
@@ -484,6 +491,7 @@ int pram_update_inode(struct inode *inode)
  */
 static void pram_free_inode(struct inode *inode)
 {
+	pram_info("inode.c / pram_free_inode\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_super_block *ps;
 	struct pram_inode *pi;
@@ -521,6 +529,7 @@ static void pram_free_inode(struct inode *inode)
 
 struct inode *pram_iget(struct super_block *sb, unsigned long ino)
 {
+	pram_info("inode.c / pram_iget\n");
 	struct inode *inode;
 	struct pram_inode *pi;
 	int err;
@@ -549,6 +558,7 @@ fail:
 
 void pram_evict_inode(struct inode *inode)
 {
+	pram_info("inode.c / pram_evict_inode\n");
 	int want_delete = 0;
 
 	if (!inode->i_nlink && !is_bad_inode(inode))
@@ -576,6 +586,7 @@ void pram_evict_inode(struct inode *inode)
 struct inode *pram_new_inode(struct inode *dir, umode_t mode,
 			     const struct qstr *qstr)
 {
+	pram_info("inode.c / pram_new_inode\n");
 	struct super_block *sb;
 	struct pram_sb_info *sbi;
 	struct pram_super_block *ps;
@@ -687,6 +698,7 @@ fail1:
 
 int pram_write_inode(struct inode *inode, struct writeback_control *wbc)
 {
+	pram_info("inode.c / pram_write_inode\n");
 	return pram_update_inode(inode);
 }
 
@@ -695,11 +707,13 @@ int pram_write_inode(struct inode *inode, struct writeback_control *wbc)
  */
 void pram_dirty_inode(struct inode *inode, int flags)
 {
+	pram_info("inode.c / pram_dirty_inode\n");
 	pram_update_inode(inode);
 }
 
 static int pram_readpage(struct file *file, struct page *page)
 {
+	pram_info("inode.c / pram_readpage\n");
 	struct inode *inode = page->mapping->host;
 	struct super_block *sb = inode->i_sb;
 	loff_t offset, size;
@@ -760,6 +774,7 @@ static int pram_readpage(struct file *file, struct page *page)
  */
 static int pram_block_truncate_page(struct inode *inode, loff_t newsize)
 {
+	pram_info("inode.c / pram_block_truncate_page\n");
 	struct super_block *sb = inode->i_sb;
 	unsigned long offset = newsize & (sb->s_blocksize - 1);
 	unsigned long blocknr, length;
@@ -794,6 +809,7 @@ out:
 
 static int pram_setsize(struct inode *inode, loff_t newsize)
 {
+	pram_info("inode.c / pram_setsize\n");
 	int ret = 0;
 	loff_t oldsize = inode->i_size;
 
@@ -831,6 +847,7 @@ static int pram_setsize(struct inode *inode, loff_t newsize)
 
 int pram_notify_change(struct dentry *dentry, struct iattr *attr)
 {
+	pram_info("inode.c / pram_notify_change\n");
 	struct inode *inode = dentry->d_inode;
 	struct pram_inode *pi = pram_get_inode(inode->i_sb, inode->i_ino);
 	int error;
@@ -859,6 +876,7 @@ int pram_notify_change(struct dentry *dentry, struct iattr *attr)
 
 void pram_set_inode_flags(struct inode *inode, struct pram_inode *pi)
 {
+	pram_info("inode.c / pram_set_inode_flags\n");
 	unsigned int flags = be32_to_cpu(pi->i_flags);
 
 	inode->i_flags &= ~(S_SYNC|S_APPEND|S_IMMUTABLE|S_NOATIME|S_DIRSYNC);
@@ -878,6 +896,7 @@ void pram_set_inode_flags(struct inode *inode, struct pram_inode *pi)
 
 void pram_get_inode_flags(struct inode *inode, struct pram_inode *pi)
 {
+	pram_info("inode.c / pram_get_inode_flags\n");
 	unsigned int flags = inode->i_flags;
 	unsigned int pram_flags = be32_to_cpu(pi->i_flags);
 

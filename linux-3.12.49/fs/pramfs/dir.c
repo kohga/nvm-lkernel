@@ -21,6 +21,7 @@
  */
 int pram_add_link(struct dentry *dentry, struct inode *inode)
 {
+	pram_info("dir.c / pram_add_link\n");
 	struct inode *dir = dentry->d_parent->d_inode;
 	struct pram_inode *pidir, *pi, *pitail = NULL;
 	u64 tail_ino, prev_ino;
@@ -76,6 +77,7 @@ int pram_add_link(struct dentry *dentry, struct inode *inode)
 
 int pram_remove_link(struct inode *inode)
 {
+	pram_info("dir.c / pram_remove_link\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_inode *prev = NULL;
 	struct pram_inode *next = NULL;
@@ -152,6 +154,7 @@ int pram_remove_link(struct inode *inode)
 
 static int pram_readdir(struct file *file, struct dir_context *ctx)
 {
+	pram_info("dir.c / (struct file_operations)pram_dir_operations..iterate = pram_readdir\n");
 	struct inode *inode = file_inode(file);
 	struct super_block *sb = inode->i_sb;
 	struct pram_inode *pi;

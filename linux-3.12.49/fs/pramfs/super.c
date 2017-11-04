@@ -43,6 +43,7 @@ static void *first_pram_super;
 
 struct pram_super_block *get_pram_super(void)
 {
+	pram_info("super.c / get_pram_super\n");
 	return (struct pram_super_block *)first_pram_super;
 }
 EXPORT_SYMBOL(get_pram_super);
@@ -50,6 +51,7 @@ EXPORT_SYMBOL(get_pram_super);
 
 void pram_error_mng(struct super_block *sb, const char *fmt, ...)
 {
+	pram_info("super.c / pram_error_mng\n");
 	va_list args;
 
 	va_start(args, fmt);
@@ -68,6 +70,7 @@ void pram_error_mng(struct super_block *sb, const char *fmt, ...)
 
 static void pram_set_blocksize(struct super_block *sb, unsigned long size)
 {
+	pram_info("super.c / pram_set_blocksize\n");
 	int bits;
 
 	/*
@@ -83,6 +86,7 @@ static void pram_set_blocksize(struct super_block *sb, unsigned long size)
 static inline void *pram_ioremap(phys_addr_t phys_addr, ssize_t size,
 				 bool protect)
 {
+	pram_info("super.c / pram_ioremap\n");
 	void *retval;
 
 	/*
@@ -108,6 +112,7 @@ fail:
 
 static loff_t pram_max_size(int bits)
 {
+	pram_info("super.c / pram_max_size\n");
 	loff_t res;
 	res = (1ULL << (3*bits - 6)) - 1;
 
@@ -153,6 +158,7 @@ static const match_table_t tokens = {
 
 static phys_addr_t get_phys_addr(void **data)
 {
+	pram_info("super.c / get_phys_addr\n");
 	phys_addr_t phys_addr;
 	char *options = (char *) *data;
 	unsigned long long ulltmp;
@@ -190,6 +196,7 @@ static phys_addr_t get_phys_addr(void **data)
 static int pram_parse_options(char *options, struct pram_sb_info *sbi,
 			      bool remount)
 {
+	pram_info("super.c / pram_parse_options\n");
 	char *p, *rest;
 	substring_t args[MAX_OPT_ARGS];
 	int option;
@@ -345,6 +352,7 @@ bad_opt:
 
 static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 {
+	pram_info("super.c / pram_init\n");
 	unsigned long bpi, num_inodes, bitmap_size, blocksize, num_blocks;
 	u64 bitmap_start;
 	struct pram_inode *root_i;
@@ -465,10 +473,7 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 	return root_i;
 }
 
-
-
 # if 0
-
 static struct pram_inode *jbd_init(struct super_block *sb, unsigned long size)
 {
 	unsigned long bpi, num_inodes, bitmap_size, blocksize, num_blocks;
@@ -590,13 +595,11 @@ static struct pram_inode *jbd_init(struct super_block *sb, unsigned long size)
 
 	return root_i;
 }
-
 #endif
-
-
 
 static inline void set_default_opts(struct pram_sb_info *sbi)
 {
+	pram_info("super.c / set_default_opts\n");
 #ifdef CONFIG_PRAMFS_WRITE_PROTECT
 	set_opt(sbi->s_mount_opt, PROTECT);
 #endif
@@ -605,6 +608,7 @@ static inline void set_default_opts(struct pram_sb_info *sbi)
 
 static void pram_root_check(struct super_block *sb, struct pram_inode *root_pi)
 {
+	pram_info("super.c / pram_root_check\n");
 	pram_memunlock_inode(sb, root_pi);
 
 	if (root_pi->i_d.d_next) {
@@ -632,6 +636,7 @@ static void pram_root_check(struct super_block *sb, struct pram_inode *root_pi)
 
 static int pram_fill_super(struct super_block *sb, void *data, int silent)
 {
+	pram_info("super.c / pram_fill_super\n");
 	struct pram_super_block *super, *super_redund;
 	struct pram_inode *root_pi;
 	struct pram_sb_info *sbi = NULL;
@@ -858,6 +863,7 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 
 int pram_statfs(struct dentry *d, struct kstatfs *buf)
 {
+	pram_info("super.c / (struct super_operations)pram_sops..statfs = pram_statfs\n");
 	struct super_block *sb = d->d_sb;
 	struct pram_super_block *ps = pram_get_super(sb);
 
@@ -873,6 +879,7 @@ int pram_statfs(struct dentry *d, struct kstatfs *buf)
 
 static int pram_show_options(struct seq_file *seq, struct dentry *root)
 {
+	pram_info("super.c / (struct super_operations)pram_sops..show_options = pram_show_options\n");
 	struct pram_sb_info *sbi = PRAM_SB(root->d_sb);
 
 	seq_printf(seq, ",physaddr=0x%016llx", (u64)sbi->phys_addr);
@@ -931,6 +938,7 @@ static int pram_show_options(struct seq_file *seq, struct dentry *root)
 
 int pram_remount(struct super_block *sb, int *mntflags, char *data)
 {
+	pram_info("super.c / (struct super_operations)pram_sops..remount_fs = pram_remount\n");
 	unsigned long old_sb_flags;
 	unsigned long old_mount_opt;
 	struct pram_super_block *ps;
@@ -968,6 +976,7 @@ int pram_remount(struct super_block *sb, int *mntflags, char *data)
 
 static void pram_put_super(struct super_block *sb)
 {
+	pram_info("super.c / (struct super_operations)pram_sops..put_super = pram_put_super\n");
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 	struct pram_super_block *ps = pram_get_super(sb);
 	u64 size = be64_to_cpu(ps->s_size);
@@ -993,6 +1002,7 @@ static void pram_put_super(struct super_block *sb)
 
 static struct inode *pram_alloc_inode(struct super_block *sb)
 {
+	pram_info("super.c / (struct super_operations)pram_sops..alloc_inode = pram_alloc_inode\n");
 	struct pram_inode_vfs *vi = (struct pram_inode_vfs *)
 				kmem_cache_alloc(pram_inode_cachep, GFP_NOFS);
 	if (!vi)
@@ -1003,17 +1013,20 @@ static struct inode *pram_alloc_inode(struct super_block *sb)
 
 static void pram_i_callback(struct rcu_head *head)
 {
+	pram_info("super.c / pram_i_callback\n");
 	struct inode *inode = container_of(head, struct inode, i_rcu);
 	kmem_cache_free(pram_inode_cachep, PRAM_I(inode));
 }
 
 static void pram_destroy_inode(struct inode *inode)
 {
+	pram_info("super.c / (struct super_operations)pram_sops..destroy_inode = pram_destroy_inode\n");
 	call_rcu(&inode->i_rcu, pram_i_callback);
 }
 
 static void init_once(void *foo)
 {
+	pram_info("super.c / init_once\n");
 	struct pram_inode_vfs *vi = (struct pram_inode_vfs *) foo;
 
 #ifdef CONFIG_PRAMFS_XATTR
@@ -1026,6 +1039,7 @@ static void init_once(void *foo)
 
 static int __init init_inodecache(void)
 {
+	pram_info("super.c / init_inodecache\n");
 	pram_inode_cachep = kmem_cache_create("pram_inode_cache",
 					     sizeof(struct pram_inode_vfs),
 					     0, (SLAB_RECLAIM_ACCOUNT|
@@ -1038,6 +1052,7 @@ static int __init init_inodecache(void)
 
 static void destroy_inodecache(void)
 {
+	pram_info("super.c / destroy_inodecache\n");
 	/*
          * Make sure all delayed rcu free inodes are flushed before we
          * destroy cache.
@@ -1068,6 +1083,7 @@ static struct super_operations pram_sops = {
 static struct dentry *pram_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
+	pram_info("super.c / (struct file_system_type)pram_fs_type..mount = pram_mount\n");
 	return mount_nodev(fs_type, flags, data, pram_fill_super);
 }
 
@@ -1082,6 +1098,7 @@ MODULE_ALIAS_FS("pramfs");
 static struct inode *pram_nfs_get_inode(struct super_block *sb,
 		u64 ino, u32 generation)
 {
+	pram_info("super.c / pram_nfs_get_inode\n");
 	struct pram_super_block *ps = pram_get_super(sb);
 	struct inode *inode;
 
@@ -1106,6 +1123,7 @@ static struct dentry *
 pram_fh_to_dentry(struct super_block *sb, struct fid *fid, int fh_len,
 		   int fh_type)
 {
+	pram_info("super.c / (struct export_operations)pram_export_ops..fh_to_dentry = pram_fh_to_dentry\n");
 	return generic_fh_to_dentry(sb, fid, fh_len, fh_type,
 				    pram_nfs_get_inode);
 }
@@ -1114,6 +1132,7 @@ static struct dentry *
 pram_fh_to_parent(struct super_block *sb, struct fid *fid, int fh_len,
 		   int fh_type)
 {
+	pram_info("super.c / (struct export_operations)pram_export_ops..fh_to_parent = pram_fh_to_parent\n");
 	return generic_fh_to_parent(sb, fid, fh_len, fh_type,
 				    pram_nfs_get_inode);
 }
@@ -1126,6 +1145,7 @@ static const struct export_operations pram_export_ops = {
 
 static int __init init_pram_fs(void)
 {
+	pram_info("super.c / init_pram_fs\n");
 	int rc = 0;
 
 	rc = init_pram_xattr();
@@ -1157,6 +1177,7 @@ out1:
 
 static void __exit exit_pram_fs(void)
 {
+	pram_info("super.c / exit_pram_fs\n");
 	unregister_filesystem(&pram_fs_type);
 	bdi_destroy(&pram_backing_dev_info);
 	destroy_inodecache();

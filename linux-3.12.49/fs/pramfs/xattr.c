@@ -134,6 +134,7 @@ const struct xattr_handler *pram_xattr_handlers[] = {
 
 static void desc_put(struct super_block *sb, struct pram_xblock_desc *desc)
 {
+	pram_info("xattr.c\n");
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 	if (!put_xblock_desc(sbi, desc)) {
 		/* Ok we can free the block and its descriptor */
@@ -145,6 +146,7 @@ static void desc_put(struct super_block *sb, struct pram_xblock_desc *desc)
 
 static inline const struct xattr_handler *pram_xattr_handler(int name_index)
 {
+	pram_info("xattr.c\n");
 	const struct xattr_handler *handler = NULL;
 
 	if (name_index > 0 && name_index < ARRAY_SIZE(pram_xattr_handler_map))
@@ -165,6 +167,7 @@ static inline const struct xattr_handler *pram_xattr_handler(int name_index)
 int pram_xattr_get(struct inode *inode, int name_index, const char *name,
 	       void *buffer, size_t buffer_size)
 {
+	pram_info("xattr.c\n");
 	char *bp = NULL;
 	struct pram_xattr_entry *entry;
 	struct pram_xblock_desc *desc;
@@ -277,6 +280,7 @@ cleanup:
 static int pram_xattr_list(struct dentry *dentry, char *buffer,
 			   size_t buffer_size)
 {
+	pram_info("xattr.c\n");
 	struct inode *inode = dentry->d_inode;
 	char *bp = NULL;
 	struct pram_xattr_entry *entry;
@@ -370,6 +374,7 @@ cleanup:
  */
 ssize_t pram_listxattr(struct dentry *dentry, char *buffer, size_t size)
 {
+	pram_info("xattr.c\n");
 	return pram_xattr_list(dentry, buffer, size);
 }
 
@@ -388,6 +393,7 @@ ssize_t pram_listxattr(struct dentry *dentry, char *buffer, size_t size)
 int pram_xattr_set(struct inode *inode, int name_index, const char *name,
 	       const void *value, size_t value_len, int flags)
 {
+	pram_info("xattr.c\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 	struct pram_xattr_header *header = NULL;
@@ -674,6 +680,7 @@ static int pram_xattr_set2(struct inode *inode, char *old_bp,
 			   struct pram_xblock_desc *old_desc,
 			   struct pram_xattr_header *header)
 {
+	pram_info("xattr.c\n");
 	struct super_block *sb = inode->i_sb;
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 	struct pram_xblock_desc *new_desc = NULL;
@@ -802,6 +809,7 @@ out:
  */
 void pram_xattr_delete_inode(struct inode *inode)
 {
+	pram_info("xattr.c\n");
 	char *bp = NULL;
 	struct mb_cache_entry *ce;
 	struct pram_inode *pi;
@@ -859,6 +867,7 @@ cleanup:
  */
 void pram_xattr_put_super(struct super_block *sb)
 {
+	pram_info("xattr.c\n");
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 	/*
 	 * NOTE: we haven't got any block device to use with mb. Mb code
@@ -885,6 +894,7 @@ void pram_xattr_put_super(struct super_block *sb)
 static int pram_xattr_cache_insert(struct super_block *sb,
 				   unsigned long blocknr, u32 xhash)
 {
+	pram_info("xattr.c\n");
 	struct pram_sb_info *sbi = PRAM_SB(sb);
 	__u32 hash = be32_to_cpu(xhash);
 	struct mb_cache_entry *ce;
@@ -919,6 +929,7 @@ static int pram_xattr_cache_insert(struct super_block *sb,
 static int pram_xattr_cmp(struct pram_xattr_header *header1,
 			  struct pram_xattr_header *header2)
 {
+	pram_info("xattr.c\n");
 	struct pram_xattr_entry *entry1, *entry2;
 
 	entry1 = ENTRY(header1+1);
@@ -959,6 +970,7 @@ static int pram_xattr_cmp(struct pram_xattr_header *header1,
 static struct pram_xblock_desc *pram_xattr_cache_find(struct inode *inode,
 					       struct pram_xattr_header *header)
 {
+	pram_info("xattr.c\n");
 	__u32 hash = be32_to_cpu(header->h_hash);
 	struct mb_cache_entry *ce;
 	struct pram_xblock_desc *desc;
@@ -1021,6 +1033,7 @@ again:
 static inline void pram_xattr_hash_entry(struct pram_xattr_header *header,
 					 struct pram_xattr_entry *entry)
 {
+	pram_info("xattr.c\n");
 	__u32 hash = 0;
 	char *name = entry->e_name;
 	int n;
@@ -1057,6 +1070,7 @@ static inline void pram_xattr_hash_entry(struct pram_xattr_header *header,
 static void pram_xattr_rehash(struct pram_xattr_header *header,
 			      struct pram_xattr_entry *entry)
 {
+	pram_info("xattr.c\n");
 	struct pram_xattr_entry *here;
 	__u32 hash = 0;
 
@@ -1080,6 +1094,7 @@ static void pram_xattr_rehash(struct pram_xattr_header *header,
 
 static void init_xblock_desc_once(void *foo)
 {
+	pram_info("xattr.c\n");
 	struct pram_xblock_desc *desc = (struct pram_xblock_desc *) foo;
 
 	xblock_desc_init_once(desc);
@@ -1087,6 +1102,7 @@ static void init_xblock_desc_once(void *foo)
 
 int __init init_pram_xattr(void)
 {
+	pram_info("xattr.c\n");
 	int ret = 0;
 	pram_xattr_cache = mb_cache_create("pram_xattr", 6);
 	if (!pram_xattr_cache) {
@@ -1113,6 +1129,7 @@ fail1:
 
 void exit_pram_xattr(void)
 {
+	pram_info("xattr.c\n");
 	mb_cache_destroy(pram_xattr_cache);
 	kmem_cache_destroy(pram_xblock_desc_cache);
 }

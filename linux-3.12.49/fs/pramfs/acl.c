@@ -28,6 +28,7 @@
  */
 static struct posix_acl *pram_acl_load(const void *value, size_t size)
 {
+	pram_info("acl.c / pram_acl_load\n");
 	const char *end = (char *)value + size;
 	int n, count;
 	struct posix_acl *acl;
@@ -94,6 +95,7 @@ fail:
  */
 static void *pram_acl_save(const struct posix_acl *acl, size_t *size)
 {
+	pram_info("acl.c / pram_acl_save\n");
 	struct pram_acl_header *ext_acl;
 	char *e;
 	size_t n;
@@ -143,6 +145,7 @@ fail:
  */
 struct posix_acl *pram_get_acl(struct inode *inode, int type)
 {
+	pram_info("acl.c / pram_get_acl\n");
 	int name_index;
 	char *value = NULL;
 	struct posix_acl *acl;
@@ -191,6 +194,7 @@ struct posix_acl *pram_get_acl(struct inode *inode, int type)
  */
 static int pram_set_acl(struct inode *inode, int type, struct posix_acl *acl)
 {
+	pram_info("acl.c / pram_set_acl\n");
 	int name_index;
 	void *value = NULL;
 	size_t size = 0;
@@ -246,6 +250,7 @@ static int pram_set_acl(struct inode *inode, int type, struct posix_acl *acl)
  */
 int pram_init_acl(struct inode *inode, struct inode *dir)
 {
+	pram_info("acl.c / pram_init_acl\n");
 	struct posix_acl *acl = NULL;
 	int error = 0;
 
@@ -296,6 +301,7 @@ cleanup:
  */
 int pram_acl_chmod(struct inode *inode)
 {
+	pram_info("acl.c / pram_acl_chmod\n");
 	struct posix_acl *acl;
 	int error;
 
@@ -309,7 +315,7 @@ int pram_acl_chmod(struct inode *inode)
 	error = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
 	if (error)
 		return error;
-	error = pram_set_acl(inode, ACL_TYPE_ACCESS, acl); 
+	error = pram_set_acl(inode, ACL_TYPE_ACCESS, acl);
 	posix_acl_release(acl);
 	return error;
 }
@@ -321,6 +327,7 @@ static size_t pram_xattr_list_acl_access(struct dentry *dentry, char *list,
 					size_t list_size, const char *name,
 					size_t name_len, int type)
 {
+	pram_info("* acl.c / (struct xattr_handler)pram_xattr_acl_access_handler..list = pram_xattr_list_acl_access\n");
 	const size_t size = sizeof(POSIX_ACL_XATTR_ACCESS);
 
 	if (!test_opt(dentry->d_sb, POSIX_ACL))
@@ -334,6 +341,7 @@ static size_t pram_xattr_list_acl_default(struct dentry *dentry, char *list,
 					  size_t list_size, const char *name,
 					  size_t name_len, int type)
 {
+	pram_info("* acl.c / (struct xattr_handler)pram_xattr_acl_default_handler..list = pram_xattr_list_acl_default\n");
 	const size_t size = sizeof(POSIX_ACL_XATTR_DEFAULT);
 
 	if (!test_opt(dentry->d_sb, POSIX_ACL))
@@ -346,6 +354,7 @@ static size_t pram_xattr_list_acl_default(struct dentry *dentry, char *list,
 static int pram_xattr_get_acl(struct dentry *dentry, const char *name,
 			      void *buffer, size_t size, int type)
 {
+	pram_info("* acl.c / (struct xattr_handler)pram_xattr_acl_***_handler..get = pram_xattr_get_acl\n");
 	struct posix_acl *acl;
 	int error;
 
@@ -369,6 +378,7 @@ static int pram_xattr_set_acl(struct dentry *dentry, const char *name,
 			      const void *value, size_t size, int flags,
 			      int type)
 {
+	pram_info("* acl.c / (struct xattr_handler)pram_xattr_acl_***_handler..get = pram_xattr_set_acl\n");
 	struct posix_acl *acl;
 	int error;
 
