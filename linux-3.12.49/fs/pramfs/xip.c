@@ -15,6 +15,8 @@
 #include "pram.h"
 #include "xip.h"
 
+unsigned long pram_xip_process_status;
+unsigned long pram_xip_process_count;
 /*
  * Wrappers. We need to use the rcu read lock to avoid
  * concurrent truncate operation. No problem for write because we held
@@ -76,7 +78,8 @@ int pram_xip_file_mmap(struct file * file, struct vm_area_struct * vma)
 	return 0;
 }
 
-static int pram_find_and_alloc_blocks(struct inode *inode, sector_t iblock,
+//static int pram_find_and_alloc_blocks(struct inode *inode, sector_t iblock,
+int pram_find_and_alloc_blocks(struct inode *inode, sector_t iblock,
 				     sector_t *data_block, int create)
 {
 	pram_info("xip.c / pram_find_and_alloc_blocks\n");
@@ -109,7 +112,8 @@ static int pram_find_and_alloc_blocks(struct inode *inode, sector_t iblock,
 	return err;
 }
 
-static inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
+//static inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
+inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
 				   int create, sector_t *result)
 {
 	pram_info("xip.c / __pram_get_block\n");

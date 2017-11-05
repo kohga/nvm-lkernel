@@ -17,6 +17,9 @@
 
 #include <uapi/linux/pram_fs.h>
 
+extern int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
+					void **kmem, unsigned long *pfn);
+
 /*
  * PRAM filesystem super-block data in memory
  */

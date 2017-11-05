@@ -21,6 +21,8 @@
 #include <asm/tlbflush.h>
 #include <asm/io.h>
 
+#include <linux/pram_fs.h>
+
 /*
  * We do use our own empty page to avoid interference with other users
  * of ZERO_PAGE(), such as /dev/zero
@@ -92,6 +94,10 @@ do_xip_mapping_read(struct address_space *mapping,
 		nr = nr - offset;
 		if (nr > len - copied)
 			nr = len - copied;
+
+		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+			printk(KERN_DEBUG "mm/filemap_xip.c / do_xip_mapping_read\n");
+		}
 
 		error = mapping->a_ops->get_xip_mem(mapping, index, 0,
 							&xip_mem, &xip_pfn);
@@ -236,6 +242,10 @@ again:
 	if (vmf->pgoff >= size)
 		return VM_FAULT_SIGBUS;
 
+	if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+		printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:\n");
+	}
+
 	error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0,
 						&xip_mem, &xip_pfn);
 	if (likely(!error))
@@ -275,7 +285,13 @@ found:
 		int err, ret = VM_FAULT_OOM;
 
 		mutex_lock(&xip_sparse_mutex);
+	
 		write_seqcount_begin(&xip_sparse_seq);
+
+		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; found:\n");
+		}
+
 		error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0,
 							&xip_mem, &xip_pfn);
 		if (unlikely(!error)) {
@@ -347,11 +363,20 @@ __xip_file_write(struct file *filp, const char __user *buf,
 		if (bytes > count)
 			bytes = count;
 
+		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+			printk(KERN_DEBUG "mm/filemap_xip.c / __xip_file_write; 01\n");
+		}
+
 		status = a_ops->get_xip_mem(mapping, index, 0,
 						&xip_mem, &xip_pfn);
 		if (status == -ENODATA) {
 			/* we allocate a new page unmap it */
 			mutex_lock(&xip_sparse_mutex);
+		
+			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+				printk(KERN_DEBUG "mm/filemap_xip.c / __xip_file_write; 02\n");
+			}
+
 			status = a_ops->get_xip_mem(mapping, index, 1,
 							&xip_mem, &xip_pfn);
 			mutex_unlock(&xip_sparse_mutex);
@@ -468,6 +493,10 @@ xip_truncate_page(struct address_space *mapping, loff_t from)
 		return 0;
 
 	length = blocksize - length;
+
+	if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+		printk(KERN_DEBUG "mm/filemap_xip.c / xip_truncate_page\n");
+	}
 
 	err = mapping->a_ops->get_xip_mem(mapping, index, 0,
 						&xip_mem, &xip_pfn);

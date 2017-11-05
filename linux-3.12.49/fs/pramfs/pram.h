@@ -52,6 +52,15 @@ do {                                                                   \
 #define set_opt(o, opt)		(o |= PRAM_MOUNT_##opt)
 #define test_opt(sb, opt)	(PRAM_SB(sb)->s_mount_opt & PRAM_MOUNT_##opt)
 
+// kohga
+#define PRAM_XIP_MMAP		0x000001
+#define PRAM_XIP_MULT		0x000002
+extern unsigned long pram_xip_process_status;
+extern unsigned long pram_xip_process_count;
+
+
+
+
 /* Function Prototypes */
 extern void pram_error_mng(struct super_block *sb, const char *fmt, ...);
 
