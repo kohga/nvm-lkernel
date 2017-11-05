@@ -248,10 +248,19 @@ again:
 
 	error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0,
 						&xip_mem, &xip_pfn);
-	if (likely(!error))
+
+	if (likely(!error)){
+		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:01; goto found;\n");
+		}
 		goto found;
-	if (error != -ENODATA)
+	}
+	if (error != -ENODATA){
+		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:02; return VM_FAULT_OOM;\n");
+		}
 		return VM_FAULT_OOM;
+	}
 
 	/* sparse block */
 	if ((vma->vm_flags & (VM_WRITE | VM_MAYWRITE)) &&
@@ -264,22 +273,35 @@ again:
 		error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 1,
 							&xip_mem, &xip_pfn);
 		mutex_unlock(&xip_sparse_mutex);
-		if (error)
+		if (error){
+			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:03; return VM_FAULT_SIGBUS;\n");
+			}
 			return VM_FAULT_SIGBUS;
-		/* unmap sparse mappings at pgoff from all other vmas */
+		}
+			/* unmap sparse mappings at pgoff from all other vmas */
 		__xip_unmap(mapping, vmf->pgoff);
 
 found:
 		err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address,
 							xip_pfn);
-		if (err == -ENOMEM)
+		if (err == -ENOMEM){
+			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 04; return VM_FAULT_OOM;\n");
+			}
 			return VM_FAULT_OOM;
+		}
 		/*
 		 * err == -EBUSY is fine, we've raced against another thread
 		 * that faulted-in the same page
 		 */
 		if (err != -EBUSY)
 			BUG_ON(err);
+
+
+		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 05; return VM_FAULT_NOPAGE;\n");
+		}
 		return VM_FAULT_NOPAGE;
 	} else {
 		int err, ret = VM_FAULT_OOM;
@@ -297,23 +319,42 @@ found:
 		if (unlikely(!error)) {
 			write_seqcount_end(&xip_sparse_seq);
 			mutex_unlock(&xip_sparse_mutex);
+			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 06; goto again;\n");
+			}
 			goto again;
 		}
-		if (error != -ENODATA)
+		if (error != -ENODATA){
+			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 07; goto out;\n");
+			}
 			goto out;
+		}
 		/* not shared and writable, use xip_sparse_page() */
 		page = xip_sparse_page();
-		if (!page)
+		if (!page){
+			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 08; goto out;\n");
+			}
 			goto out;
+		}
 		err = vm_insert_page(vma, (unsigned long)vmf->virtual_address,
 							page);
-		if (err == -ENOMEM)
+		if (err == -ENOMEM){
+			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 09; goto out;\n");
+			}
 			goto out;
+		}
 
 		ret = VM_FAULT_NOPAGE;
 out:
 		write_seqcount_end(&xip_sparse_seq);
 		mutex_unlock(&xip_sparse_mutex);
+
+		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
+			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 10; return ret;\n");
+		}
 
 		return ret;
 	}

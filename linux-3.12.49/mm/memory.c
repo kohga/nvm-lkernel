@@ -67,6 +67,8 @@
 #include <asm/tlbflush.h>
 #include <asm/pgtable.h>
 
+#include <linux/pram_fs.h>
+
 #include "internal.h"
 
 #ifdef LAST_NID_NOT_IN_PAGE_FLAGS
@@ -2239,8 +2241,16 @@ int vm_insert_mixed(struct vm_area_struct *vma, unsigned long addr,
 		struct page *page;
 
 		page = pfn_to_page(pfn);
+		if (vma->vm_ops->fault == pram_xip_file_fault){
+			printk(KERN_DEBUG "mm/memory.c / vm_insert_mixed; return insert_page;\n");
+		}
 		return insert_page(vma, addr, page, vma->vm_page_prot);
 	}
+
+	if (vma->vm_ops->fault == pram_xip_file_fault){
+		printk(KERN_DEBUG "mm/memory.c / vm_insert_mixed; return insert_pfn;\n");
+	}
+
 	return insert_pfn(vma, addr, pfn, vma->vm_page_prot);
 }
 EXPORT_SYMBOL(vm_insert_mixed);

@@ -19,6 +19,7 @@
 
 extern int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 					void **kmem, unsigned long *pfn);
+extern int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf);
 
 /*
  * PRAM filesystem super-block data in memory

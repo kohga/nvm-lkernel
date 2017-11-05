@@ -133,6 +133,11 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	pram_info("xip.c / pram_get_xip_mem\n");
 	int rc;
 	sector_t block = 0;
+	pram_info("mapping->host = %x\n", mapping->host);
+	pram_info("pgoff = %x\n", pgoff);
+	pram_info("create = %d\n", create);
+	//pram_info("**kmem = %x\n", **kmem);
+	pram_info("*pfn = %lu\n", *pfn);
 
 	/* first, retrieve the block */
 	rc = __pram_get_block(mapping->host, pgoff, create, &block);
