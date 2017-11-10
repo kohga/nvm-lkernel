@@ -226,6 +226,8 @@ struct vm_region {
  * library, the executable area etc).
  */
 struct vm_area_struct {
+	unsigned long vma_pram_flags; /* kohga add field */
+
 	/* The first cache line has the info for VMA tree walking. */
 
 	unsigned long vm_start;		/* Our start address within vm_mm. */
@@ -324,6 +326,8 @@ struct mm_rss_stat {
 
 struct kioctx_table;
 struct mm_struct {
+	unsigned long mm_pram_flags; /* kohga add field */
+
 	struct vm_area_struct *mmap;		/* list of VMAs */
 	struct rb_root mm_rb;
 	u32 vmacache_seqnum;                   /* per-thread vmacache */

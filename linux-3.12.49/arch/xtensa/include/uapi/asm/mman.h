@@ -56,6 +56,9 @@
 #define MAP_STACK	0x40000		/* give out an address that is best suited for process/thread stacks */
 #define MAP_HUGETLB	0x80000		/* create a huge page mapping */
 
+#define MAP_PRAM	0x100000		/* kohga added */
+#define MAP_PRAM_ATOMIC	0x200000		/* kohga added */
+
 /*
  * Flags for msync
  */

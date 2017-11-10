@@ -144,8 +144,12 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	if (rc)
 		goto exit;
 
+	pram_info("block = %x\n", block);
+
 	*kmem = pram_get_block(mapping->host->i_sb, block);
 	*pfn =  pram_get_pfn(mapping->host->i_sb, block);
+	pram_info("after: *kmem = %lu\n", *kmem);
+	pram_info("after: *pfn = %lu\n", *pfn);
 
 exit:
 	return rc;

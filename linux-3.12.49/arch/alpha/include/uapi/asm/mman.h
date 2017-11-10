@@ -15,6 +15,9 @@
 #define MAP_FIXED	0x100		/* Interpret addr exactly */
 #define MAP_ANONYMOUS	0x10		/* don't use a file */
 
+#define MAP_PRAM	0x40		/* kohga added */
+#define MAP_PRAM_ATOMIC	0x80		/* kohga added */
+
 /* not used by linux, but here to make sure we don't clash with OSF/1 defines */
 #define _MAP_HASSEMAPHORE 0x0200
 #define _MAP_INHERIT	0x0400

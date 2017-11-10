@@ -15,6 +15,9 @@
 #define MAP_FIXED	0x04		/* Interpret addr exactly */
 #define MAP_ANONYMOUS	0x10		/* don't use a file */
 
+#define MAP_PRAM	0x40		/* kohga add */
+#define MAP_PRAM_ATOMIC	0x80		/* kohga add */
+
 #define MAP_DENYWRITE	0x0800		/* ETXTBSY */
 #define MAP_EXECUTABLE	0x1000		/* mark it as an executable */
 #define MAP_LOCKED	0x2000		/* pages are locked */

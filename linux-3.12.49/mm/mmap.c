@@ -1357,11 +1357,25 @@ unsigned long do_mmap_pgoff(struct file *file, unsigned long addr,
 			vm_flags |= VM_NORESERVE;
 	}
 
+
+	/* kohga added */
+	
+	//if (flags & MAP_PRAM){
+		//mm->mm_pram_flags |= VM_PRAM;
+		//printk(KERN_DEBUG "MAP_PRAM\n");
+
+		//if (flags & MAP_PRAM_ATOMIC){
+			//printk(KERN_DEBUG "MAP_PRAM_ATOMIC\n");
+			//mm->mm_pram_flags |= VM_PRAM_ATOMIC;
+
+	//}
+
 	addr = mmap_region(file, addr, len, vm_flags, pgoff);
 	if (!IS_ERR_VALUE(addr) &&
 	    ((vm_flags & VM_LOCKED) ||
 	     (flags & (MAP_POPULATE | MAP_NONBLOCK)) == MAP_POPULATE))
 		*populate = len;
+
 	return addr;
 }
 
@@ -1487,6 +1501,7 @@ static inline int accountable_mapping(struct file *file, vm_flags_t vm_flags)
 	return (vm_flags & (VM_NORESERVE | VM_SHARED | VM_WRITE)) == VM_WRITE;
 }
 
+
 unsigned long mmap_region(struct file *file, unsigned long addr,
 		unsigned long len, vm_flags_t vm_flags, unsigned long pgoff)
 {
@@ -1554,6 +1569,9 @@ munmap_back:
 	vma->vm_start = addr;
 	vma->vm_end = addr + len;
 	vma->vm_flags = vm_flags;
+
+	//vma->vma_pram_flags = mm->mm_pram_flags;   /* kohga add */
+
 	vma->vm_page_prot = vm_get_page_prot(vm_flags);
 	vma->vm_pgoff = pgoff;
 	INIT_LIST_HEAD(&vma->anon_vma_chain);
