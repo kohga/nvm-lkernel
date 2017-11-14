@@ -12,6 +12,10 @@
 #include <sys/time.h>
 #include <sys/syscall.h>
 
+
+#define MAP_PRAM	0x40
+#define MAP_PRAM_ATOMIC	0x80
+
 #define SYS_kohga_syscall  314
 
 void main(){
@@ -31,8 +35,8 @@ void main(){
 		//printf( "buf = %s\n", buf_sys );
 	}
 
-	if((fd=open("mapfile",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
-	//if((fd=open("mapfile",O_RDWR|O_CREAT,0666))==-1){
+	//if((fd=open("mapfile",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
+	if((fd=open("mapfile",O_RDWR|O_CREAT,0666))==-1){
 		perror("open");
 		exit(401);
 	}
@@ -52,7 +56,7 @@ void main(){
 		exit(-1);
 	}
 
-	mapp=(int *)mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	mapp=(int *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED|MAP_PRAM|MAP_PRAM_ATOMIC,fd,0);
 	if(mapp==MAP_FAILED){
 		perror("mmap");
 		exit(404);

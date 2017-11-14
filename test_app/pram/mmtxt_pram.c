@@ -12,12 +12,16 @@
 #include <sys/time.h>
 #include <sys/syscall.h>
 
+
+#define MAP_PRAM	0x40
+#define MAP_PRAM_ATOMIC	0x80
+
 #define SYS_kohga_syscall  314
 #define NUMBER 1
 
 int main(){
 
-	unsigned long page_num=12000, psize, size, i, max;
+	unsigned long psize, size, i, max;
 	int   fd, val=1, *mapp;
 	char c=0,buf_sys[256];
 	char   *ptr, *buf="ZZZZZ";
@@ -34,8 +38,8 @@ int main(){
 		//printf( "buf = %s\n", buf_sys );
 	}
 
-	if((fd=open("maptxt",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
-	//if((fd=open("maptxt",O_RDWR|O_CREAT,0666))==-1){
+	//if((fd=open("maptxt",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
+	if((fd=open("maptxt",O_RDWR|O_CREAT,0666))==-1){
 		perror("open");
 		exit(401);
 	}
@@ -56,7 +60,7 @@ int main(){
 		exit(403);
 	}
 */
-	ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED|MAP_PRAM|MAP_PRAM_ATOMIC,fd,0);
 	//ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);
 	if(ptr ==(char *)-1){
 		perror("mmap");

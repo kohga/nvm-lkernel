@@ -1359,16 +1359,16 @@ unsigned long do_mmap_pgoff(struct file *file, unsigned long addr,
 
 
 	/* kohga added */
-	
-	//if (flags & MAP_PRAM){
-		//mm->mm_pram_flags |= VM_PRAM;
-		//printk(KERN_DEBUG "MAP_PRAM\n");
+	if (flags & MAP_PRAM){
+		mm->mm_pram_flags |= VM_PRAM;
+		printk(KERN_DEBUG "MAP_PRAM\n");
 
-		//if (flags & MAP_PRAM_ATOMIC){
-			//printk(KERN_DEBUG "MAP_PRAM_ATOMIC\n");
-			//mm->mm_pram_flags |= VM_PRAM_ATOMIC;
+		if (flags & MAP_PRAM_ATOMIC){
+			printk(KERN_DEBUG "MAP_PRAM_ATOMIC\n");
+			mm->mm_pram_flags |= VM_PRAM_ATOMIC;
+		}
 
-	//}
+	}
 
 	addr = mmap_region(file, addr, len, vm_flags, pgoff);
 	if (!IS_ERR_VALUE(addr) &&
