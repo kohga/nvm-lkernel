@@ -1570,7 +1570,13 @@ munmap_back:
 	vma->vm_end = addr + len;
 	vma->vm_flags = vm_flags;
 
-	//vma->vma_pram_flags = mm->mm_pram_flags;   /* kohga add */
+	if( mm->mm_pram_flags & VM_PRAM_ATOMIC ){
+		printk(KERN_DEBUG "mm/mmap.c; VM_PRAM_ATOMIC\n");
+		vma->vma_pram_flags |= VM_PRAM;   /* kohga add */
+		vma->vma_pram_flags |= VM_PRAM_ATOMIC;   /* kohga add */
+	}
+
+
 
 	vma->vm_page_prot = vm_get_page_prot(vm_flags);
 	vma->vm_pgoff = pgoff;

@@ -21,6 +21,7 @@
 #include <asm/tlbflush.h>
 #include <asm/io.h>
 
+#include <linux/mm.h>
 #include <linux/pram_fs.h>
 
 /*
@@ -236,6 +237,13 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	struct page *page;
 	int error;
 
+	// kohga add
+	printk(KERN_DEBUG "mm/filemap_xip; vma->vma_pram_flags = %lu\n",vma->vma_pram_flags);
+	if( vma->vma_pram_flags & VM_PRAM_ATOMIC ){
+		printk(KERN_DEBUG "mm/filemap_xip; PRAM_ATOMIC\n");
+		mapping->host->inode_pram_flags |= PRAM_ATOMIC;
+	}
+
 	/* XXX: are VM_FAULT_ codes OK? */
 again:
 	size = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
@@ -270,8 +278,10 @@ again:
 
 		/* maybe shared writable, allocate new block */
 		mutex_lock(&xip_sparse_mutex);
+
 		error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 1,
 							&xip_mem, &xip_pfn);
+
 		mutex_unlock(&xip_sparse_mutex);
 		if (error){
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){

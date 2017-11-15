@@ -139,6 +139,12 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	//pram_info("**kmem = %x\n", **kmem);
 	pram_info("*pfn = %lu\n", *pfn);
 
+	// kohga add
+	pram_info("mapping->host->inode_pram_flags = %lu\n", mapping->host->inode_pram_flags);
+	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
+		pram_info("PRAM_ATOMIC\n");
+	}
+
 	/* first, retrieve the block */
 	rc = __pram_get_block(mapping->host, pgoff, create, &block);
 	if (rc)

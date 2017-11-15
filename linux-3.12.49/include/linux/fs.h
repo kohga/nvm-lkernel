@@ -523,6 +523,7 @@ struct posix_acl;
  * of the 'struct inode'
  */
 struct inode {
+	unsigned long inode_pram_flags;
 	umode_t			i_mode;
 	unsigned short		i_opflags;
 	kuid_t			i_uid;
