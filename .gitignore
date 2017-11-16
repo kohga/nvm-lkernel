@@ -112,4 +112,6 @@ mapfile
 mmext
 mmtxtext
 mluext
+mlu1
+mlu2
 workspace/*
