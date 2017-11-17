@@ -242,6 +242,8 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	if( vma->vma_pram_flags & VM_PRAM_ATOMIC ){
 		printk(KERN_DEBUG "mm/filemap_xip; PRAM_ATOMIC\n");
 		mapping->host->inode_pram_flags |= PRAM_ATOMIC;
+	} else {
+		mapping->host->inode_pram_flags &= ~PRAM_ATOMIC;
 	}
 
 	/* XXX: are VM_FAULT_ codes OK? */

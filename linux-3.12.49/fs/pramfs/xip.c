@@ -143,6 +143,7 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	pram_info("mapping->host->inode_pram_flags = %lu\n", mapping->host->inode_pram_flags);
 	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
 		pram_info("PRAM_ATOMIC\n");
+		create = 1;
 	}
 
 	/* first, retrieve the block */
