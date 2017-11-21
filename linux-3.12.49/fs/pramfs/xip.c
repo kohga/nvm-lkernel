@@ -127,6 +127,58 @@ inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
 	return rc;
 }
 
+
+
+
+
+
+int pram_find_and_alloc_blocks_atomic(struct inode *inode, sector_t iblock,
+				     sector_t *data_block, int create)
+{
+	pram_info("xip.c / pram_find_and_alloc_blocks_atomic\n");
+	int err = -EIO;
+	u64 block;
+
+	if( inode->inode_pram_flags & PRAM_ATOMIC ){
+		pram_info("PRAM_ATOMIC:2\n");
+
+		/* NEW  */
+		err = pram_alloc_blocks(inode, iblock, 1);
+		if (err){
+			pram_info("PRAM_ATOMIC:2: ERR1\n");
+			goto err;
+		}
+
+		block = pram_find_data_block(inode, iblock);
+		if (!block) {
+			pram_info("PRAM_ATOMIC:2: ERR2\n");
+			err = -ENODATA;
+			goto err;
+		}
+	}
+
+	*data_block = block;
+	err = 0;
+
+ err:
+	return err;
+}
+
+inline int __pram_get_block_atomic(struct inode *inode, pgoff_t pgoff,
+				   int create, sector_t *result)
+{
+	pram_info("xip.c / __pram_get_block_atomic\n");
+	int rc = 0;
+
+	rc = pram_find_and_alloc_blocks_atomic(inode, (sector_t)pgoff, result, create);
+
+	if (rc == -ENODATA)
+		BUG_ON(create);
+
+	return rc;
+}
+
+
 int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		     void **kmem, unsigned long *pfn)
 {
@@ -139,22 +191,51 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	//pram_info("**kmem = %x\n", **kmem);
 	pram_info("*pfn = %lu\n", *pfn);
 
+	/* first, retrieve the block */
+	rc = __pram_get_block(mapping->host, pgoff, create, &block);
+	if (rc){
+		pram_info("goto exit;\n");
+		goto exit;
+	}
+
 	// kohga add
 	pram_info("mapping->host->inode_pram_flags = %lu\n", mapping->host->inode_pram_flags);
 	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
-		pram_info("PRAM_ATOMIC\n");
-		create = 1;
+		sector_t old_block = block;
+		pgoff_t old_pgoff = pgoff;
+		void **old_kmem;
+		struct super_block *sb = mapping->host->i_sb;
+		pgoff += 1;
+		pram_info("PRAM_ATOMIC:1\n");
+		//*kmem = pram_get_block(mapping->host->i_sb, block);
+		pram_info("PRAM_ATOMIC:1-1\n");
+
+		rc = __pram_get_block_atomic(mapping->host, pgoff, create, &block);
+		if (rc){
+			pram_info("goto exit;\n");
+			goto exit;
+		}
+
+		pram_info("old pgoff = %x\n", old_pgoff);
+		pram_info("new pgoff = %x\n", pgoff);
+		pram_info("old block = %x\n", old_block);
+		pram_info("new block = %x\n", block);
+
+		*kmem = pram_get_block(mapping->host->i_sb, block);
+
+		pram_info("memcpy; before\n");
+		memcpy(*kmem, pram_get_block(mapping->host->i_sb, old_block), sb->s_blocksize);
+		pram_info("memcpy; after\n");
+
+		*pfn =  pram_get_pfn(mapping->host->i_sb, block);
+
+	}else{
+		*kmem = pram_get_block(mapping->host->i_sb, block);
+		*pfn =  pram_get_pfn(mapping->host->i_sb, block);
 	}
 
-	/* first, retrieve the block */
-	rc = __pram_get_block(mapping->host, pgoff, create, &block);
-	if (rc)
-		goto exit;
+	pram_info("NOW block = %x\n", block);
 
-	pram_info("block = %x\n", block);
-
-	*kmem = pram_get_block(mapping->host->i_sb, block);
-	*pfn =  pram_get_pfn(mapping->host->i_sb, block);
 	pram_info("after: *kmem = %lu\n", *kmem);
 	pram_info("after: *pfn = %lu\n", *pfn);
 
