@@ -22,6 +22,7 @@ extern int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int cr
 extern int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf);
 
 #define PRAM_ATOMIC 0x0001
+#define PRAM_COMMIT 0x0002
 
 
 /*
