@@ -205,7 +205,7 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		pgoff_t old_pgoff = pgoff;
 		void **old_kmem;
 		struct super_block *sb = mapping->host->i_sb;
-		pgoff += 1000000;
+		pgoff += 1000;
 		pram_info("PRAM_ATOMIC:1\n");
 		//*kmem = pram_get_block(mapping->host->i_sb, block);
 		pram_info("PRAM_ATOMIC:1-1\n");
@@ -223,13 +223,18 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 
 		*kmem = pram_get_block(mapping->host->i_sb, block);
 
+		
 		pram_info("memcpy; before\n");
 		if( mapping->host->inode_pram_flags & PRAM_COMMIT ){
 			pram_info("memcpy; PRAM_COMMIT\n");
 			memcpy(*kmem, pram_get_block(mapping->host->i_sb, old_block), sb->s_blocksize);
 			mapping->host->inode_pram_flags &= ~PRAM_COMMIT;
+			//pram_free_block(mapping->host->i_sb,old_pgoff);
+			//pram_info("free!!\n");
+			//mapping->host->inode_pram_flags &= ~PRAM_ATOMIC;
 		}
 		pram_info("memcpy; after\n");
+		
 
 		*pfn =  pram_get_pfn(mapping->host->i_sb, block);
 
