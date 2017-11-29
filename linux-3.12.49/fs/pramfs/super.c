@@ -34,6 +34,11 @@
 #include "xattr.h"
 #include "pram.h"
 
+/* kohga add  */
+struct pram_atomic_data *pad_p;
+struct pram_atomic_data pad;
+
+
 static struct super_operations pram_sops;
 static const struct export_operations pram_export_ops;
 static struct kmem_cache *pram_inode_cachep;
@@ -634,6 +639,16 @@ static void pram_root_check(struct super_block *sb, struct pram_inode *root_pi)
 	pram_memlock_inode(sb, root_pi);
 }
 
+static void set_init_atomic(void){
+	pad_p = &pad;
+	pad_p->i_cnt = 0;
+	pad_p->start = NULL;
+	pad_p->now = NULL;
+	pad_p->end = NULL;
+	return;
+}
+
+
 static int pram_fill_super(struct super_block *sb, void *data, int silent)
 {
 	pram_info("super.c / pram_fill_super\n");
@@ -847,7 +862,17 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	retval = 0;
+
+	if(sbi->s_mount_opt & PRAM_MOUNT_NOINIT){
+		pram_info("kohga; catch_noinit_flag!!! 2nd\n");
+		goto noinit;
+	}else{
+		pram_info("kohga; init!!! 2nd\n");
+		set_init_atomic();
+	}
+
 	pram_info("kohga;pram_fill_super: return 0\n");
+
 	return retval;
  out:
 	if (sbi->virt_addr) {
@@ -858,6 +883,7 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	kfree(sbi);
+
 	return retval;
 }
 

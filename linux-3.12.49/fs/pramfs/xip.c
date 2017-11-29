@@ -11,12 +11,17 @@
 
 #include <linux/mm.h>
 #include <linux/fs.h>
+#include <linux/slab.h>
 #include <linux/buffer_head.h>
 #include "pram.h"
 #include "xip.h"
 
+
+/* use it now ?  */
 unsigned long pram_xip_process_status;
 unsigned long pram_xip_process_count;
+
+
 /*
  * Wrappers. We need to use the rcu read lock to avoid
  * concurrent truncate operation. No problem for write because we held
@@ -201,6 +206,19 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	// kohga add
 	pram_info("mapping->host->inode_pram_flags = %lu\n", mapping->host->inode_pram_flags);
 	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
+		if(pgoff == 0){
+			pram_info("create\n");
+			pad_p->i_cnt++;
+			pram_info("create2\n");
+			pad_p->start =(struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
+			pram_info("create3\n");
+			pad_p->now =(struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
+			pram_info("create4\n");
+			pad_p->end =(struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
+			pram_info("create5\n");
+			pad_p->now->now =(struct pram_atomic_block *)kmalloc(sizeof(struct pram_atomic_block), GFP_HIGHUSER);
+		}
+
 		sector_t old_block = block;
 		pgoff_t old_pgoff = pgoff;
 		void **old_kmem;

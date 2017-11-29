@@ -58,6 +58,8 @@ do {                                                                   \
 extern unsigned long pram_xip_process_status;
 extern unsigned long pram_xip_process_count;
 
+extern struct pram_atomic_data *pad_p;
+extern struct pram_atomic_data pad;
 
 
 

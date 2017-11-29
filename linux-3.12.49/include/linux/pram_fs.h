@@ -21,8 +21,37 @@ extern int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int cr
 					void **kmem, unsigned long *pfn);
 extern int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf);
 
+extern struct pram_atomic_data *pad_p;
+extern struct pram_atomic_data pad;
+
 #define PRAM_ATOMIC 0x0001
 #define PRAM_COMMIT 0x0002
+
+
+struct pram_atomic_data{
+	int i_cnt;
+	struct pram_atomic_inode *start;
+	struct pram_atomic_inode *now;
+	struct pram_atomic_inode *end;
+};
+
+struct pram_atomic_inode{
+	struct pram_atomic_inode *prev;
+	struct pram_atomic_inode *next;
+	int b_cnt;
+	struct inode *i_address;
+	struct pram_atomic_block *start;
+	struct pram_atomic_block *now;
+	struct pram_atomic_block *end;
+};
+
+struct pram_atomic_block{
+	struct pram_atomic_block *prev;
+	struct pram_atomic_block *next;
+	int shadow;
+	int origin_iblock;
+	int shadow_iblock;
+};
 
 
 /*
