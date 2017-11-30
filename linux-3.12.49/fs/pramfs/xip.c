@@ -17,11 +17,6 @@
 #include "xip.h"
 
 
-/* use it now ?  */
-unsigned long pram_xip_process_status;
-unsigned long pram_xip_process_count;
-
-
 /*
  * Wrappers. We need to use the rcu read lock to avoid
  * concurrent truncate operation. No problem for write because we held
@@ -208,15 +203,21 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
 		if(pgoff == 0){
 			pram_info("create\n");
-			pad_p->i_cnt++;
+			pram_j.pad.i_cnt += 1;
 			pram_info("create2\n");
-			pad_p->start =(struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
+			pram_j.pad.i_start = (struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
 			pram_info("create3\n");
-			pad_p->now =(struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
-			pram_info("create4\n");
-			pad_p->end =(struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
-			pram_info("create5\n");
-			pad_p->now->now =(struct pram_atomic_block *)kmalloc(sizeof(struct pram_atomic_block), GFP_HIGHUSER);
+
+			pram_j.pad.i_now = pram_j.pad.i_start;
+			pram_j.pad.i_now->i_address = mapping->host;
+			pram_j.pad.i_now->b_cnt += 1;
+			pram_j.pad.i_now->b_start = (struct pram_atomic_block *)kmalloc(sizeof(struct pram_atomic_block), GFP_HIGHUSER);
+			pram_j.pad.i_now->b_now = pram_j.pad.i_now->b_start;
+			
+			pram_j.pad.i_now->b_now->shadow = 0;
+			pram_j.pad.i_now->b_now->origin_block = block;
+			pram_j.pad.i_now->b_now->origin_pgoff = pgoff;
+			pram_info("create end\n");
 		}
 
 		sector_t old_block = block;
@@ -238,6 +239,14 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		pram_info("new pgoff = %x\n", pgoff);
 		pram_info("old block = %x\n", old_block);
 		pram_info("new block = %x\n", block);
+
+		if(old_pgoff == 0){
+			pram_j.pad.i_now->b_now->shadow_block = block;
+			pram_j.pad.i_now->b_now->shadow_pgoff = pgoff;
+			pram_j.pad.i_now->b_now->shadow = 1;
+			pram_info("create end 2\n");
+			pram_info("i_ino = %lu\n", pram_j.pad.i_now->i_address->i_ino);
+		}
 
 		*kmem = pram_get_block(mapping->host->i_sb, block);
 

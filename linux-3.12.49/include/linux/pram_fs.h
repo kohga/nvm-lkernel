@@ -21,37 +21,10 @@ extern int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int cr
 					void **kmem, unsigned long *pfn);
 extern int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf);
 
-extern struct pram_atomic_data *pad_p;
-extern struct pram_atomic_data pad;
+extern struct pram_journal pram_j;
 
 #define PRAM_ATOMIC 0x0001
 #define PRAM_COMMIT 0x0002
-
-
-struct pram_atomic_data{
-	int i_cnt;
-	struct pram_atomic_inode *start;
-	struct pram_atomic_inode *now;
-	struct pram_atomic_inode *end;
-};
-
-struct pram_atomic_inode{
-	struct pram_atomic_inode *prev;
-	struct pram_atomic_inode *next;
-	int b_cnt;
-	struct inode *i_address;
-	struct pram_atomic_block *start;
-	struct pram_atomic_block *now;
-	struct pram_atomic_block *end;
-};
-
-struct pram_atomic_block{
-	struct pram_atomic_block *prev;
-	struct pram_atomic_block *next;
-	int shadow;
-	int origin_iblock;
-	int shadow_iblock;
-};
 
 
 /*
@@ -99,6 +72,42 @@ struct pram_sb_info {
 	int s_jquota_fmt;			/* Format of quota to use */
 #endif
 
+};
+
+
+struct pram_atomic_block{
+	struct pram_atomic_block *b_prev;
+	struct pram_atomic_block *b_next;
+	int shadow;
+	sector_t origin_block;
+	pgoff_t origin_pgoff;
+	sector_t shadow_block;
+	pgoff_t shadow_pgoff;
+};
+
+struct pram_atomic_inode{
+	struct pram_atomic_inode *i_prev;
+	struct pram_atomic_inode *i_next;
+	int b_cnt;
+	struct inode *i_address;
+	struct pram_atomic_block *b_start;
+	struct pram_atomic_block *b_now;
+	struct pram_atomic_block *b_end;
+};
+
+struct pram_atomic_data{
+	int i_cnt;
+	struct pram_atomic_inode *i_start;
+	struct pram_atomic_inode *i_now;
+	struct pram_atomic_inode *i_end;
+};
+
+struct pram_journal{
+	int status;  // 0:init, 1:start, 2:create, 4,match, 5:delete, 6:commit, 7:full commit
+	char func[32];
+	int line;
+	struct pram_atomic_data pad;
+	struct pram_sb_info *psi;
 };
 
 #endif	/* _LINUX_PRAM_FS_H */

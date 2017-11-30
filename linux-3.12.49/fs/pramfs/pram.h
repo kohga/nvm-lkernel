@@ -53,13 +53,10 @@ do {                                                                   \
 #define test_opt(sb, opt)	(PRAM_SB(sb)->s_mount_opt & PRAM_MOUNT_##opt)
 
 // kohga
-#define PRAM_XIP_MMAP		0x000001
-#define PRAM_XIP_MULT		0x000002
-extern unsigned long pram_xip_process_status;
-extern unsigned long pram_xip_process_count;
+//#define PRAM_XIP_MMAP		0x000001
+//#define PRAM_XIP_MULT		0x000002
 
-extern struct pram_atomic_data *pad_p;
-extern struct pram_atomic_data pad;
+extern struct pram_journal pram_j;
 
 
 
