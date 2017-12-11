@@ -127,13 +127,7 @@ inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
 	return rc;
 }
 
-
-
-
-
-
-int pram_find_and_alloc_blocks_atomic(struct inode *inode, sector_t iblock,
-				     sector_t *data_block, int create)
+int pram_find_and_alloc_blocks_atomic(struct inode *inode, sector_t iblock, sector_t *data_block)
 {
 	pram_info("xip.c / pram_find_and_alloc_blocks_atomic\n");
 	int err = -EIO;
@@ -164,18 +158,124 @@ int pram_find_and_alloc_blocks_atomic(struct inode *inode, sector_t iblock,
 	return err;
 }
 
-inline int __pram_get_block_atomic(struct inode *inode, pgoff_t pgoff,
-				   int create, sector_t *result)
+
+inline int __pram_get_block_atomic(struct inode *inode, pgoff_t pgoff, sector_t *result)
 {
 	pram_info("xip.c / __pram_get_block_atomic\n");
 	int rc = 0;
 
-	rc = pram_find_and_alloc_blocks_atomic(inode, (sector_t)pgoff, result, create);
+	rc = pram_find_and_alloc_blocks_atomic(inode, (sector_t)pgoff, result);
 
 	if (rc == -ENODATA)
-		BUG_ON(create);
+		pram_info("ERROR: __pram_get_block_atomic\n");
 
 	return rc;
+}
+
+
+struct pram_atomic_inode *pas_create_inode(struct inode *create_inode){
+	pram_info("pas_create_inode\n");
+	struct pram_atomic_inode *pai;
+
+	pai = (struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
+	pai->i_next = NULL;
+	pai->b_cnt = 0;
+	pai->i_address = create_inode;
+	pai->b_start = NULL;
+	pram_j.pad.i_cnt += 1;
+
+	return pai;
+}
+
+
+struct pram_atomic_inode *pas_search_inode(struct inode *search_inode)
+{
+	pram_info("pas_search_inode\n");
+	struct pram_atomic_inode *pai = pram_j.pad.i_start;
+
+	while(pai != NULL){
+		pram_info("while\n");
+		if(pai->i_address == search_inode)
+			return pai;
+
+		pai = pai->i_next;
+	}
+	return pai;
+}
+
+
+struct pram_atomic_block *pas_create_block(struct inode *ino_p, pgoff_t pgoff, sector_t block)
+{
+	pram_info("pas_create_block\n");
+	struct pram_atomic_block *pab;
+	sector_t s_block;
+	int offset = 1000;
+	int rc = 0;
+
+	pab = (struct pram_atomic_block *)kmalloc(sizeof(struct pram_atomic_block), GFP_HIGHUSER);
+	pab->b_next = NULL;
+	pab->origin_pgoff = pgoff;
+	pab->origin_block = block;
+
+	pab->shadow_pgoff = pgoff + offset;
+
+	rc = __pram_get_block_atomic(ino_p, pab->shadow_pgoff, &(pab->shadow_block) );
+	if (rc){
+		pram_info("ERROR: pas_create_block\n");
+	}
+
+	pram_info("\n---check status---\n");
+	pram_info("shadow_pgoff = %d\n", pab->shadow_pgoff);
+	pram_info("shadow_block = %x\n", pab->shadow_block);
+
+	return pab;
+}
+
+
+sector_t pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
+{
+	pram_info("pram_atomic_system\n");
+	struct pram_atomic_inode *pai = pas_search_inode(ino_p);
+
+	if(pai == NULL){
+		pram_info("create inode\n");
+		pai = pas_create_inode(ino_p);
+		if(pram_j.pad.i_cnt == 1){
+			pram_j.pad.i_start = pai;
+		}
+	}
+
+	struct pram_atomic_block *bp = pai->b_start;
+	while(bp != NULL){
+		pram_info("while\n");
+		if(bp->origin_pgoff == pgoff){
+			pram_info("Match pgoff");
+			return bp->shadow_block;
+		}
+		bp = bp->b_next;
+	}
+
+	bp = pas_create_block(ino_p, pgoff, block);
+	pai->b_cnt += 1;
+
+	if(pai->b_cnt == 1){
+		pai->b_start = bp;
+	}
+
+	pram_info("memcpy before\n");
+	memcpy(pram_get_block(pai->i_address->i_sb, bp->shadow_block), 
+			pram_get_block(pai->i_address->i_sb, bp->origin_block), pai->i_address->i_sb->s_blocksize);
+	pram_info("memcpy after\n");
+
+	return bp->shadow_block;
+}
+
+
+sector_t pas_commit_block(struct inode *ino_p, pgoff_t pgoff)
+{
+	sector_t block = 0;
+
+	return block;
 }
 
 
@@ -187,9 +287,6 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 	sector_t block = 0;
 	pram_info("mapping->host = %x\n", mapping->host);
 	pram_info("pgoff = %x\n", pgoff);
-	pram_info("create = %d\n", create);
-	//pram_info("**kmem = %x\n", **kmem);
-	pram_info("*pfn = %lu\n", *pfn);
 
 	/* first, retrieve the block */
 	rc = __pram_get_block(mapping->host, pgoff, create, &block);
@@ -198,84 +295,45 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		goto exit;
 	}
 
+
 	// kohga add
-	pram_info("mapping->host->inode_pram_flags = %lu\n", mapping->host->inode_pram_flags);
 	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
-		if(pgoff == 0){
-			pram_info("create\n");
-			pram_j.pad.i_cnt += 1;
-			pram_info("create2\n");
-			pram_j.pad.i_start = (struct pram_atomic_inode *)kmalloc(sizeof(struct pram_atomic_inode), GFP_HIGHUSER);
-			pram_info("create3\n");
+		pram_info("*** PRAM_ATOMIC ***\n");
+		sector_t shadow_block;
 
-			pram_j.pad.i_now = pram_j.pad.i_start;
-			pram_j.pad.i_now->i_address = mapping->host;
-			pram_j.pad.i_now->b_cnt += 1;
-			pram_j.pad.i_now->b_start = (struct pram_atomic_block *)kmalloc(sizeof(struct pram_atomic_block), GFP_HIGHUSER);
-			pram_j.pad.i_now->b_now = pram_j.pad.i_now->b_start;
-			
-			pram_j.pad.i_now->b_now->shadow = 0;
-			pram_j.pad.i_now->b_now->origin_block = block;
-			pram_j.pad.i_now->b_now->origin_pgoff = pgoff;
-			pram_info("create end\n");
-		}
+		shadow_block= pram_atomic_system(mapping->host, pgoff, block);
 
-		sector_t old_block = block;
-		pgoff_t old_pgoff = pgoff;
-		void **old_kmem;
-		struct super_block *sb = mapping->host->i_sb;
-		pgoff += 1000;
-		pram_info("PRAM_ATOMIC:1\n");
-		//*kmem = pram_get_block(mapping->host->i_sb, block);
-		pram_info("PRAM_ATOMIC:1-1\n");
+		*kmem = pram_get_block(mapping->host->i_sb, shadow_block);
+		*pfn =  pram_get_pfn(mapping->host->i_sb, shadow_block);
 
-		rc = __pram_get_block_atomic(mapping->host, pgoff, create, &block);
-		if (rc){
-			pram_info("goto exit;\n");
-			goto exit;
-		}
+		block = shadow_block;
 
-		pram_info("old pgoff = %x\n", old_pgoff);
-		pram_info("new pgoff = %x\n", pgoff);
-		pram_info("old block = %x\n", old_block);
-		pram_info("new block = %x\n", block);
 
-		if(old_pgoff == 0){
-			pram_j.pad.i_now->b_now->shadow_block = block;
-			pram_j.pad.i_now->b_now->shadow_pgoff = pgoff;
-			pram_j.pad.i_now->b_now->shadow = 1;
-			pram_info("create end 2\n");
-			pram_info("i_ino = %lu\n", pram_j.pad.i_now->i_address->i_ino);
-		}
+	}else if( mapping->host->inode_pram_flags & PRAM_COMMIT ){
+		pram_info("*** PRAM_COMMIT ***\n");
+		sector_t commit_block;
 
-		*kmem = pram_get_block(mapping->host->i_sb, block);
+		commit_block = pas_commit_block(mapping->host, pgoff);
 
-		
-		pram_info("memcpy; before\n");
-		if( mapping->host->inode_pram_flags & PRAM_COMMIT ){
-			pram_info("memcpy; PRAM_COMMIT\n");
-			memcpy(*kmem, pram_get_block(mapping->host->i_sb, old_block), sb->s_blocksize);
-			mapping->host->inode_pram_flags &= ~PRAM_COMMIT;
-			//pram_free_block(mapping->host->i_sb,old_pgoff);
-			//pram_info("free!!\n");
-			//mapping->host->inode_pram_flags &= ~PRAM_ATOMIC;
-		}
-		pram_info("memcpy; after\n");
-		
+		*kmem = pram_get_block(mapping->host->i_sb, commit_block);
+		*pfn =  pram_get_pfn(mapping->host->i_sb, commit_block);
 
-		*pfn =  pram_get_pfn(mapping->host->i_sb, block);
+		block = commit_block;
+
 
 	}else{
+		pram_info("*** ELSE ***\n");
 		*kmem = pram_get_block(mapping->host->i_sb, block);
 		*pfn =  pram_get_pfn(mapping->host->i_sb, block);
 	}
 
-	//mapping->host->inode_pram_flags &= ~PRAM_ATOMIC;
+	mapping->host->inode_pram_flags &= ~PRAM_ATOMIC;
 
-	pram_info("NOW block = %x\n", block);
+	pram_info("\n---check status---\n");
+	pram_info("block = %x\n", block);
+	pram_info("*kmem = %lu\n", *kmem);
+	pram_info("*pfn = %lu\n", *pfn);
 
-	pram_info("after: *kmem = %lu\n", *kmem);
-	pram_info("after: *pfn = %lu\n", *pfn);
 
 exit:
 	return rc;

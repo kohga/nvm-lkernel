@@ -12,15 +12,17 @@
 #include <sys/time.h>
 #include <sys/syscall.h>
 
+
+#define MAP_PRAM	0x40
+#define MAP_PRAM_ATOMIC	0x80
+
 #define SYS_kohga_syscall  314
-#define NUMBER 1
 
 int main(){
 
-	unsigned long page_num=12000, psize, size, i, max;
+	unsigned long page_num=1000, psize, size, i, max;
 	int   fd, val=1, *mapp;
-	char c=0,buf_sys[256];
-	char   *ptr, *buf="ZZZZZ";
+	char c=0, buf_sys[256], *ptr;
 	clock_t start, end;
 	struct timeval s, e;
 
@@ -34,8 +36,8 @@ int main(){
 		//printf( "buf = %s\n", buf_sys );
 	}
 
-	//if((fd=open("maptxt",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
-	if((fd=open("maptxt",O_RDWR|O_CREAT,0666))==-1){
+	//if((fd=open("test_file",O_RDWR|O_CREAT|O_DIRECT|O_SYNC,0666))==-1){
+	if((fd=open("test_file",O_RDWR|O_CREAT,0666))==-1){
 		perror("open");
 		exit(401);
 	}
@@ -43,29 +45,31 @@ int main(){
 	psize=sysconf(_SC_PAGE_SIZE);  // get page_size (if it is notBSD)
 	//printf("psize = %lu\n",psize);
 
+	size = page_num * psize;
+	printf("mmap size = %lu\n",size);
 
-	size=(NUMBER*sizeof(char)/psize+1)*psize;
-	printf("mmap size = %lu K\n",(size/1024));
-/*
 	if(lseek(fd,size,SEEK_SET)<0){
 		perror("lseek");
 		exit(402);
 	}
+
 	if(write(fd,&c,sizeof(char))==-1){
 		perror("write");
 		exit(403);
 	}
-*/
-	ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
-	//ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);
+
+
+	//ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED|MAP_PRAM|MAP_PRAM_ATOMIC,fd,0);
 	if(ptr ==(char *)-1){
 		perror("mmap");
 		exit(404);
 	}
 
-	for(i=0;i<NUMBER;i++){
-		strcpy(ptr,buf);
+	for(i=0; i<size-1; i++){
+		ptr[i] = 'a';
 	}
+	ptr[i]='\n';
 
 	if(msync(ptr,size,0)==-1){
 		perror("msync");

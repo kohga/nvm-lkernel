@@ -641,8 +641,6 @@ static void pram_root_check(struct super_block *sb, struct pram_inode *root_pi)
 static void init_journal(void){
 	pram_j.pad.i_cnt = 0;
 	pram_j.pad.i_start = NULL;
-	pram_j.pad.i_now = NULL;
-	pram_j.pad.i_end = NULL;
 	return;
 }
 

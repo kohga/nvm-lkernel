@@ -76,9 +76,7 @@ struct pram_sb_info {
 
 
 struct pram_atomic_block{
-	struct pram_atomic_block *b_prev;
 	struct pram_atomic_block *b_next;
-	int shadow;
 	sector_t origin_block;
 	pgoff_t origin_pgoff;
 	sector_t shadow_block;
@@ -86,20 +84,15 @@ struct pram_atomic_block{
 };
 
 struct pram_atomic_inode{
-	struct pram_atomic_inode *i_prev;
 	struct pram_atomic_inode *i_next;
 	int b_cnt;
 	struct inode *i_address;
 	struct pram_atomic_block *b_start;
-	struct pram_atomic_block *b_now;
-	struct pram_atomic_block *b_end;
 };
 
 struct pram_atomic_data{
 	int i_cnt;
 	struct pram_atomic_inode *i_start;
-	struct pram_atomic_inode *i_now;
-	struct pram_atomic_inode *i_end;
 };
 
 struct pram_journal{

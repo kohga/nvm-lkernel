@@ -63,7 +63,10 @@ void main(){
 		mapp[i] = val;
 	}
 
-	msync(mapp,size,0);
+	if(msync(mapp,size,0)==-1){
+		perror("msync");
+		exit(410);
+	}
 
 	if(munmap(mapp,size)==-1){
 		perror("munmap");
