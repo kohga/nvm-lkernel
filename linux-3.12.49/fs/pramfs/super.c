@@ -719,7 +719,8 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		pram_info("kohga; initsize = %lu \n",initsize);
 
 		//kohga_hack
-		unsigned long pram_initsize = initsize/2;
+		//unsigned long pram_initsize = initsize/2;
+		unsigned long pram_initsize = initsize;
 		unsigned long jbd_initsize = initsize/2 - 1;
 		unsigned long jbd_area_start = initsize/2 + 1 ;
 		unsigned long jbd_area_end = initsize;

@@ -56,8 +56,8 @@ void main(){
 		exit(-1);
 	}
 
-	//mapp=(int *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED|MAP_PRAM|MAP_PRAM_ATOMIC,fd,0);
-	mapp=(int *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	mapp=(int *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED|MAP_PRAM|MAP_PRAM_ATOMIC,fd,0);
+	//mapp=(int *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
 	if(mapp==MAP_FAILED){
 		perror("mmap");
 		exit(404);

@@ -129,12 +129,12 @@ inline int __pram_get_block(struct inode *inode, pgoff_t pgoff,
 
 int pram_find_and_alloc_blocks_atomic(struct inode *inode, sector_t iblock, sector_t *data_block)
 {
-	pram_info("xip.c / pram_find_and_alloc_blocks_atomic\n");
+	//pram_info("xip.c / pram_find_and_alloc_blocks_atomic\n");
 	int err = -EIO;
 	u64 block;
 
 	if( inode->inode_pram_flags & PRAM_ATOMIC ){
-		pram_info("PRAM_ATOMIC:2\n");
+		//pram_info("PRAM_ATOMIC:2\n");
 
 		/* NEW  */
 		err = pram_alloc_blocks(inode, iblock, 1);
@@ -161,7 +161,7 @@ int pram_find_and_alloc_blocks_atomic(struct inode *inode, sector_t iblock, sect
 
 inline int __pram_get_block_atomic(struct inode *inode, pgoff_t pgoff, sector_t *result)
 {
-	pram_info("xip.c / __pram_get_block_atomic\n");
+	//pram_info("xip.c / __pram_get_block_atomic\n");
 	int rc = 0;
 
 	rc = pram_find_and_alloc_blocks_atomic(inode, (sector_t)pgoff, result);
@@ -209,7 +209,7 @@ struct pram_atomic_block *pas_create_block(struct inode *ino_p, pgoff_t pgoff, s
 	pram_info("pas_create_block\n");
 	struct pram_atomic_block *pab;
 	sector_t s_block;
-	int offset = 1000;
+	int offset = 1024;
 	int rc = 0;
 
 	pab = (struct pram_atomic_block *)kmalloc(sizeof(struct pram_atomic_block), GFP_HIGHUSER);
@@ -231,8 +231,8 @@ struct pram_atomic_block *pas_create_block(struct inode *ino_p, pgoff_t pgoff, s
 	return pab;
 }
 
-
-sector_t pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
+/*
+sector_t _pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
 {
 	pram_info("pram_atomic_system\n");
 	struct pram_atomic_inode *pai = pas_search_inode(ino_p);
@@ -269,7 +269,25 @@ sector_t pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
 
 	return bp->shadow_block;
 }
+*/
 
+sector_t pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
+{
+	pram_info("pram_atomic_system\n");
+	sector_t shadow_block;
+	int offset = 1024;
+	pgoff_t  shadow_pgoff = pgoff + offset;
+	int rc = 0;
+
+	rc = __pram_get_block_atomic(ino_p, shadow_pgoff, &shadow_block );
+	if (rc){
+		pram_info("ERROR: pas_create_block\n");
+	}
+
+	memcpy(pram_get_block(ino_p->i_sb, shadow_block), pram_get_block(ino_p->i_sb, block), ino_p->i_sb->s_blocksize);
+
+	return shadow_block;
+}
 
 sector_t pas_commit_block(struct inode *ino_p, pgoff_t pgoff)
 {
@@ -298,18 +316,27 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 
 	// kohga add
 	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
-		pram_info("*** PRAM_ATOMIC ***\n");
-		sector_t shadow_block;
+		//pram_info("*** PRAM_ATOMIC ***\n");
+		//sector_t shadow_block;
+		//shadow_block= pram_atomic_system(mapping->host, pgoff, block);
 
-		shadow_block= pram_atomic_system(mapping->host, pgoff, block);
+		sector_t shadow_block;
+		int offset = 1024;
+		pgoff_t shadow_pgoff = pgoff + offset;
+		int rc = 0;
+
+		rc = __pram_get_block_atomic(mapping->host, shadow_pgoff, &shadow_block );
+		if (rc){
+			pram_info("ERROR: pas_create_block\n");
+		}
 
 		*kmem = pram_get_block(mapping->host->i_sb, shadow_block);
+		memcpy(*kmem, pram_get_block(mapping->host->i_sb, block), mapping->host->i_sb->s_blocksize);
+		//*kmem = pram_get_block(mapping->host->i_sb, shadow_block);
 		*pfn =  pram_get_pfn(mapping->host->i_sb, shadow_block);
-
 		block = shadow_block;
 
-
-	}else if( mapping->host->inode_pram_flags & PRAM_COMMIT ){
+		}else if( mapping->host->inode_pram_flags & PRAM_COMMIT ){
 		pram_info("*** PRAM_COMMIT ***\n");
 		sector_t commit_block;
 
@@ -319,7 +346,6 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		*pfn =  pram_get_pfn(mapping->host->i_sb, commit_block);
 
 		block = commit_block;
-
 
 	}else{
 		pram_info("*** ELSE ***\n");

@@ -241,6 +241,8 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	printk(KERN_DEBUG "mm/filemap_xip; vma->vma_pram_flags = %lu\n",vma->vma_pram_flags);
 	if( vma->vma_pram_flags & VM_PRAM_ATOMIC ){
 		printk(KERN_DEBUG "mm/filemap_xip; PRAM_ATOMIC\n");
+		printk(KERN_DEBUG "****** vma->vm_pgoff = %lu ******\n", vma->vm_pgoff);
+		printk(KERN_DEBUG "****** vmf->pgoff = %lu ******\n", vmf->pgoff);
 		mapping->host->inode_pram_flags |= PRAM_ATOMIC;
 		//mapping->host->inode_pram_flags |= PRAM_COMMIT;
 	} else {
@@ -264,6 +266,7 @@ again:
 		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:01; goto found;\n");
 		}
+
 		goto found;
 	}
 	if (error != -ENODATA){

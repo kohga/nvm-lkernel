@@ -19,7 +19,7 @@
 #define SYS_kohga_syscall  314
 
 int main(){
-	unsigned long page_num=100000, psize, size, i, max;
+	unsigned long page_num=1000, psize, size, i, max;
 	int   fd, val=1, *mapp;
 	char c=0, buf_sys[256], *ptr;
 	clock_t start, end;
@@ -44,30 +44,40 @@ int main(){
 	size = page_num * psize;
 	printf("mmap size = %lu\n",size);
 
-	if(lseek(fd,size,SEEK_SET)<0){
-		perror("lseek");
-		exit(402);
-	}
-
-	if(write(fd,&c,sizeof(char))==-1){
-		perror("write");
-		exit(403);
-	}
-
 	start = clock();
 	gettimeofday(&s, NULL);
 
-	//ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
-	ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED|MAP_PRAM|MAP_PRAM_ATOMIC,fd,0);
+	ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	//ptr=(char *)mmap(0,size,PROT_EXEC|PROT_READ|PROT_WRITE,MAP_SHARED|MAP_PRAM|MAP_PRAM_ATOMIC,fd,0);
 	if(ptr ==(char *)-1){
 		perror("mmap");
 		exit(404);
 	}
 
+	int cow_num = 0;
+	int count=0;
+	char *cow_buf;
+
 	for(i=0; i<size-1; i++){
 		ptr[i] = 'a';
+		if(i%4096==0 && i!=0 ){
+			cow_buf = (char *)malloc(4096);
+			count++;
+			for(cow_num = 0; cow_num < 4096; cow_num++){
+				cow_buf[cow_num] = 'a';
+			}
+			free(cow_buf);
+		}
 	}
 	ptr[i]='\n';
+
+	cow_buf = (char *)malloc(4096);
+	count++;
+	for(cow_num = 0; cow_num < 4096; cow_num++){
+		cow_buf[cow_num] = 'a';
+	}
+	free(cow_buf);
+	printf("cow count = %d\n", count);
 
 	if(msync(ptr,size,0)==-1){
 		perror("msync");
