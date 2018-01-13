@@ -16,7 +16,10 @@
 #include "pram.h"
 #include "xip.h"
 
-
+struct pram_atomic_file paf;
+struct pram_atomic_file *paf_start = &(paf);
+struct pram_atomic_file **paf_now = &(paf.next);
+unsigned long pp_offset = 1000000;
 /*
  * Wrappers. We need to use the rcu read lock to avoid
  * concurrent truncate operation. No problem for write because we held
@@ -172,7 +175,7 @@ inline int __pram_get_block_atomic(struct inode *inode, pgoff_t pgoff, sector_t 
 	return rc;
 }
 
-
+/*
 struct pram_atomic_inode *pas_create_inode(struct inode *create_inode){
 	pram_info("pas_create_inode\n");
 	struct pram_atomic_inode *pai;
@@ -230,7 +233,7 @@ struct pram_atomic_block *pas_create_block(struct inode *ino_p, pgoff_t pgoff, s
 
 	return pab;
 }
-
+*/
 /*
 sector_t _pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
 {
@@ -270,7 +273,7 @@ sector_t _pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
 	return bp->shadow_block;
 }
 */
-
+/*
 sector_t pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
 {
 	pram_info("pram_atomic_system\n");
@@ -288,7 +291,7 @@ sector_t pram_atomic_system(struct inode *ino_p, pgoff_t pgoff, sector_t block)
 
 	return shadow_block;
 }
-
+*/
 sector_t pas_commit_block(struct inode *ino_p, pgoff_t pgoff)
 {
 	sector_t block = 0;
@@ -296,15 +299,15 @@ sector_t pas_commit_block(struct inode *ino_p, pgoff_t pgoff)
 	return block;
 }
 
-
 int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		     void **kmem, unsigned long *pfn)
 {
 	pram_info("xip.c / pram_get_xip_mem\n");
+	pram_info("\n---Start VFS---\n");
 	int rc;
 	sector_t block = 0;
 	pram_info("mapping->host = %x\n", mapping->host);
-	pram_info("pgoff = %x\n", pgoff);
+	pram_info("pgoff = %d\n", pgoff);
 
 	/* first, retrieve the block */
 	rc = __pram_get_block(mapping->host, pgoff, create, &block);
@@ -313,7 +316,7 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		goto exit;
 	}
 
-
+#if 0
 	// kohga add
 	if( mapping->host->inode_pram_flags & PRAM_ATOMIC ){
 		//pram_info("*** PRAM_ATOMIC ***\n");
@@ -346,20 +349,19 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		*pfn =  pram_get_pfn(mapping->host->i_sb, commit_block);
 
 		block = commit_block;
+#endif
+	//}else{
+	pram_info("*** ELSE ***\n");
+	*kmem = pram_get_block(mapping->host->i_sb, block);
+	*pfn =  pram_get_pfn(mapping->host->i_sb, block);
+	//}
 
-	}else{
-		pram_info("*** ELSE ***\n");
-		*kmem = pram_get_block(mapping->host->i_sb, block);
-		*pfn =  pram_get_pfn(mapping->host->i_sb, block);
-	}
+	//mapping->host->inode_pram_flags &= ~PRAM_ATOMIC;
 
-	mapping->host->inode_pram_flags &= ~PRAM_ATOMIC;
-
-	pram_info("\n---check status---\n");
 	pram_info("block = %x\n", block);
 	pram_info("*kmem = %lu\n", *kmem);
 	pram_info("*pfn = %lu\n", *pfn);
-
+	pram_info("\n---End VFS---\n");
 
 exit:
 	return rc;

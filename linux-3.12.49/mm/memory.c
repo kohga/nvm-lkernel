@@ -3493,15 +3493,6 @@ static int do_linear_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 	pgoff_t pgoff = (((address & PAGE_MASK)
 			- vma->vm_start) >> PAGE_SHIFT) + vma->vm_pgoff;
 
-	if(vma->vma_pram_flags & VM_PRAM_ATOMIC){
-		printk(KERN_DEBUG "linear; address = %lu\n", address);
-		printk(KERN_DEBUG "linear; PAGE_MASK = %d\n", PAGE_MASK);
-		printk(KERN_DEBUG "linear; vma->vm_start = %lu\n", vma->vm_start);
-		printk(KERN_DEBUG "linear; PAGE_SHIFT = %d\n", PAGE_SHIFT);
-		printk(KERN_DEBUG "linear; vma->vm_pgoff = %lu\n", vma->vm_pgoff);
-		printk(KERN_DEBUG "linear; pgoff = %lu\n", pgoff);
-	}
-
 	pte_unmap(page_table);
 	/* The VMA was not fully populated on mmap() or missing VM_DONTEXPAND */
 	if (!vma->vm_ops->fault)
@@ -3538,10 +3529,6 @@ static int do_nonlinear_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 	}
 
 	pgoff = pte_to_pgoff(orig_pte);
-
-	if(vma->vma_pram_flags & VM_PRAM_ATOMIC){
-		printk(KERN_DEBUG "nonlinear; pgoff = %lu\n",pgoff);
-	}
 
 	return __do_fault(mm, vma, address, pmd, pgoff, flags, orig_pte);
 }

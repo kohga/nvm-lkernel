@@ -56,8 +56,11 @@ do {                                                                   \
 //#define PRAM_XIP_MMAP		0x000001
 //#define PRAM_XIP_MULT		0x000002
 
-extern struct pram_journal pram_j;
+//extern struct pram_journal pram_j;
 
+extern struct pram_atomic_file paf;
+extern struct pram_atomic_file *paf_start;
+extern struct pram_atomic_file **paf_now;
 
 
 /* Function Prototypes */

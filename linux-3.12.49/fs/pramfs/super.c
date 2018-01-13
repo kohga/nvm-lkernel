@@ -31,12 +31,13 @@
 #include <linux/cred.h>
 #include <linux/backing-dev.h>
 #include <linux/ioport.h>
+#include <linux/slab.h>
 #include "xattr.h"
 #include "pram.h"
 
 /* kohga add  */
 struct pram_journal pram_j;
-
+struct pram_page *pp_address;
 
 static struct super_operations pram_sops;
 static const struct export_operations pram_export_ops;
@@ -641,6 +642,7 @@ static void pram_root_check(struct super_block *sb, struct pram_inode *root_pi)
 static void init_journal(void){
 	pram_j.pad.i_cnt = 0;
 	pram_j.pad.i_start = NULL;
+	paf.next = NULL;
 	return;
 }
 
@@ -721,6 +723,14 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		//kohga_hack
 		//unsigned long pram_initsize = initsize/2;
 		unsigned long pram_initsize = initsize;
+		unsigned long pp_num = initsize/4000;
+		unsigned long pp_count = 0;
+		pram_info("kmalloc = %lu\n",pp_num);
+		pp_address = (struct pram_page *)kmalloc((sizeof(struct pram_page) * pp_num), GFP_HIGHUSER);
+		for(pp_count=0;pp_count<pp_num;pp_count++){
+			pp_address[pp_count].flags = PRAM_NONE;
+		}
+		pram_info("kmalloc\n");
 		unsigned long jbd_initsize = initsize/2 - 1;
 		unsigned long jbd_area_start = initsize/2 + 1 ;
 		unsigned long jbd_area_end = initsize;

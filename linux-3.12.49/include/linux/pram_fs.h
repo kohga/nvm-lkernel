@@ -23,10 +23,14 @@ extern int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 
 extern struct pram_journal pram_j;
 
-#define PRAM_ATOMIC 0x0001
-#define PRAM_COMMIT 0x0002
+#define PRAM_COMMIT 0x01
+#define PRAM_ATOMIC 0x02
 
+#define PRAM_NONE 0x01
+#define PRAM_ORIGIN 0x02
+#define PRAM_SHADOW 0x04
 
+extern unsigned long pp_offset;
 /*
  * PRAM filesystem super-block data in memory
  */
@@ -74,7 +78,29 @@ struct pram_sb_info {
 
 };
 
+extern struct pram_atomic_file *paf_start;
+extern struct pram_atomic_file **paf_now;
 
+struct pram_page{
+	char flags;
+};
+
+struct pram_atomic_block{
+	void *origin_mem;
+	void *shadow_mem;
+	unsigned long origin_pfn;
+	unsigned long shadow_pfn;
+};
+
+struct pram_atomic_file{
+	unsigned long i_ino;
+	unsigned long div;
+	struct pram_atomic_block pab[128];
+	struct pram_atomic_file *next;
+	int flags;
+};
+
+/*
 struct pram_atomic_block{
 	struct pram_atomic_block *b_next;
 	sector_t origin_block;
@@ -82,6 +108,7 @@ struct pram_atomic_block{
 	sector_t shadow_block;
 	pgoff_t shadow_pgoff;
 };
+*/
 
 struct pram_atomic_inode{
 	struct pram_atomic_inode *i_next;
