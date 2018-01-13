@@ -17,20 +17,30 @@
 
 #include <uapi/linux/pram_fs.h>
 
+/* kohga add for filemap_xip */
 extern int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 					void **kmem, unsigned long *pfn);
 extern int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf);
-
-extern struct pram_journal pram_j;
-
-#define PRAM_COMMIT 0x01
-#define PRAM_ATOMIC 0x02
-
-#define PRAM_NONE 0x01
-#define PRAM_ORIGIN 0x02
-#define PRAM_SHADOW 0x04
-
 extern unsigned long pp_offset;
+extern struct pram_page *pp_address;
+extern int pram_pgoff;
+
+#define PRAM_PAGE_SIZE 4096
+
+/* inode flags (kohga add) */
+#define PRAM_INODE_NONE 0x0001
+#define PRAM_INODE_SYNC 0x0001
+#define PRAM_INODE_COPY 0x0002
+
+/* pram page flags (kohga add) */
+#define PRAM_PAGE_NONE 0x01
+#define PRAM_PAGE_ORIGIN 0x02
+#define PRAM_PAGE_SHADOW 0x04
+
+struct pram_page{
+	char flags;
+};
+
 /*
  * PRAM filesystem super-block data in memory
  */
@@ -60,10 +70,10 @@ struct pram_sb_info {
 	struct mutex s_lock;
 
 	/* Journaling */
-	phys_addr_t jbd_phys_addr;
-	unsigned long jbd_size;
+	phys_addr_t j_phys_addr;
+	unsigned long j_size;
 
-	void *jbd_virt_addr;
+	void *j_virt_addr;
 	struct inode * s_journal_inode;
 	struct journal_s * s_journal;
 	struct list_head s_orphan;
@@ -77,57 +87,4 @@ struct pram_sb_info {
 #endif
 
 };
-
-extern struct pram_atomic_file *paf_start;
-extern struct pram_atomic_file **paf_now;
-
-struct pram_page{
-	char flags;
-};
-
-struct pram_atomic_block{
-	void *origin_mem;
-	void *shadow_mem;
-	unsigned long origin_pfn;
-	unsigned long shadow_pfn;
-};
-
-struct pram_atomic_file{
-	unsigned long i_ino;
-	unsigned long div;
-	struct pram_atomic_block pab[128];
-	struct pram_atomic_file *next;
-	int flags;
-};
-
-/*
-struct pram_atomic_block{
-	struct pram_atomic_block *b_next;
-	sector_t origin_block;
-	pgoff_t origin_pgoff;
-	sector_t shadow_block;
-	pgoff_t shadow_pgoff;
-};
-*/
-
-struct pram_atomic_inode{
-	struct pram_atomic_inode *i_next;
-	int b_cnt;
-	struct inode *i_address;
-	struct pram_atomic_block *b_start;
-};
-
-struct pram_atomic_data{
-	int i_cnt;
-	struct pram_atomic_inode *i_start;
-};
-
-struct pram_journal{
-	int status;  // 0:init, 1:start, 2:create, 4,match, 5:delete, 6:commit, 7:full commit
-	char func[32];
-	int line;
-	struct pram_atomic_data pad;
-	struct pram_sb_info *psi;
-};
-
 #endif	/* _LINUX_PRAM_FS_H */

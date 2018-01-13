@@ -35,10 +35,6 @@
 #include "xattr.h"
 #include "pram.h"
 
-/* kohga add  */
-struct pram_journal pram_j;
-struct pram_page *pp_address;
-
 static struct super_operations pram_sops;
 static const struct export_operations pram_export_ops;
 static struct kmem_cache *pram_inode_cachep;
@@ -355,6 +351,9 @@ bad_opt:
 	return -EINVAL;
 }
 
+unsigned long pram_num_pages;
+unsigned long pram_num_inodes;
+
 static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 {
 	pram_info("super.c / pram_init\n");
@@ -428,6 +427,9 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 		return ERR_PTR(-EINVAL);
 	}
 
+	pram_num_pages = num_blocks;
+	pram_num_inodes = num_inodes;
+
 	/* calc the data blocks in-use bitmap size in bytes */
 	if (num_blocks & 7)
 		bitmap_size = ((num_blocks + 8) & ~7) >> 3;
@@ -478,130 +480,6 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 	return root_i;
 }
 
-# if 0
-static struct pram_inode *jbd_init(struct super_block *sb, unsigned long size)
-{
-	unsigned long bpi, num_inodes, bitmap_size, blocksize, num_blocks;
-	u64 bitmap_start;
-	struct pram_inode *root_i;
-	struct pram_super_block *super;
-	struct pram_sb_info *sbi = PRAM_SB(sb);
-
-	pram_info("kohga;JBD; creating an empty pramfs of size %lu\n", size);
-	sbi->jbd_virt_addr = pram_ioremap(sbi->jbd_phys_addr, size,
-							pram_is_protected(sb));
-
-	if (!sbi->jbd_virt_addr) {
-		printk(KERN_ERR "kohga;JBD; ioremap of the pramfs image failed\n");
-		return ERR_PTR(-EINVAL);
-	}
-
-#ifdef CONFIG_PRAMFS_TEST
-	if (!first_pram_super)
-		first_pram_super = sbi->jbd_virt_addr;
-#endif
-
-	if (!sbi->blocksize)
-		blocksize = PRAM_DEF_BLOCK_SIZE;
-	else
-		blocksize = sbi->blocksize;
-
-	pram_set_blocksize(sb, blocksize);
-	blocksize = sb->s_blocksize;
-
-	if (sbi->blocksize && sbi->blocksize != blocksize)
-		sbi->blocksize = blocksize;
-
-	if (size < blocksize) {
-		printk(KERN_ERR "kohga;JBD; size smaller then block size\n");
-		return ERR_PTR(-EINVAL);
-	}
-
-	if (!sbi->bpi)
-		/*
-		 * default is that 5% of the filesystem is
-		 * devoted to the inode table
-		 */
-		bpi = 20 * PRAM_INODE_SIZE;
-	else
-		bpi = sbi->bpi;
-
-	if (!sbi->num_inodes)
-		num_inodes = size / bpi;
-	else
-		num_inodes = sbi->num_inodes;
-
-	/*
-	 * up num_inodes such that the end of the inode table
-	 * (and start of bitmap) is on a block boundary
-	 */
-	bitmap_start = (PRAM_SB_SIZE*2) + (num_inodes<<PRAM_INODE_BITS);
-	if (bitmap_start & (blocksize - 1))
-		bitmap_start = (bitmap_start + blocksize) &
-			~(blocksize-1);
-	num_inodes = (bitmap_start - (PRAM_SB_SIZE*2)) >> PRAM_INODE_BITS;
-
-	if (sbi->num_inodes && num_inodes != sbi->num_inodes)
-		sbi->num_inodes = num_inodes;
-
-	num_blocks = (size - bitmap_start) >> sb->s_blocksize_bits;
-
-	if (!num_blocks) {
-		printk(KERN_ERR "kohga;JBD; num blocks equals to zero\n");
-		return ERR_PTR(-EINVAL);
-	}
-
-	/* calc the data blocks in-use bitmap size in bytes */
-	if (num_blocks & 7)
-		bitmap_size = ((num_blocks + 8) & ~7) >> 3;
-	else
-		bitmap_size = num_blocks >> 3;
-	/* round it up to the nearest blocksize boundary */
-	if (bitmap_size & (blocksize - 1))
-		bitmap_size = (bitmap_size + blocksize) & ~(blocksize-1);
-
-	pram_info("kohga;JBD; blocksize %lu, num inodes %lu, num blocks %lu\n",
-		  blocksize, num_inodes, num_blocks);
-	pram_dbg("kohga;JBD; bitmap start 0x%08x, bitmap size %lu\n",
-		 (unsigned int)bitmap_start, bitmap_size);
-	pram_dbg("kohga;JBD; max name length %d\n", (unsigned int)PRAM_NAME_LEN);
-
-	super = pram_get_super(sb);
-	pram_memunlock_range(sb, super, bitmap_start + bitmap_size);
-
-	/* clear out super-block and inode table */
-	memset(super, 0, bitmap_start);
-	super->s_size = cpu_to_be64(size);
-	super->s_blocksize = cpu_to_be32(blocksize);
-	super->s_inodes_count = cpu_to_be32(num_inodes);
-	super->s_blocks_count = cpu_to_be32(num_blocks);
-	super->s_free_inodes_count = cpu_to_be32(num_inodes - 1);
-	super->s_bitmap_blocks = cpu_to_be32(bitmap_size >>
-							  sb->s_blocksize_bits);
-	super->s_free_blocks_count =
-		cpu_to_be32(num_blocks - be32_to_cpu(super->s_bitmap_blocks));
-	super->s_free_inode_hint = cpu_to_be32(1);
-	super->s_bitmap_start = cpu_to_be64(bitmap_start);
-	super->s_magic = cpu_to_be16(PRAM_SUPER_MAGIC);
-	pram_sync_super(super);
-
-	root_i = pram_get_inode(sb, PRAM_ROOT_INO);
-
-	root_i->i_mode = cpu_to_be16(sbi->mode | S_IFDIR);
-	root_i->i_uid = cpu_to_be32(sbi->uid.val);
-	root_i->i_gid = cpu_to_be32(sbi->gid.val);
-	root_i->i_links_count = cpu_to_be16(2);
-	root_i->i_d.d_parent = cpu_to_be64(PRAM_ROOT_INO);
-	pram_sync_inode(root_i);
-
-	pram_init_bitmap(sb);
-
-	pram_memlock_range(sb, super, bitmap_start + bitmap_size);
-
-	return root_i;
-}
-#endif
-
 static inline void set_default_opts(struct pram_sb_info *sbi)
 {
 	pram_info("super.c / set_default_opts\n");
@@ -639,14 +517,6 @@ static void pram_root_check(struct super_block *sb, struct pram_inode *root_pi)
 	pram_memlock_inode(sb, root_pi);
 }
 
-static void init_journal(void){
-	pram_j.pad.i_cnt = 0;
-	pram_j.pad.i_start = NULL;
-	paf.next = NULL;
-	return;
-}
-
-
 static int pram_fill_super(struct super_block *sb, void *data, int silent)
 {
 	pram_info("super.c / pram_fill_super\n");
@@ -656,9 +526,10 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	struct inode *root_i = NULL;
 	unsigned long blocksize, initsize = 0;
 	u32 random = 0;
+
 	int retval = -EINVAL;
-	struct pram_inode *jbd_pi;
-	struct inode *jbd_i = NULL;
+	struct pram_inode *j_pi;
+	struct inode *j_i = NULL;
 
 	//kohga_hack
 	pram_info("kohga;sizeof(pram_super_block): %d \n",sizeof(struct pram_super_block));
@@ -722,37 +593,36 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 
 		//kohga_hack
 		//unsigned long pram_initsize = initsize/2;
-		unsigned long pram_initsize = initsize;
-		unsigned long pp_num = initsize/4000;
+		unsigned long pram_initsize = initsize-(PRAM_PAGE_SIZE*j_page_num);
 		unsigned long pp_count = 0;
-		pram_info("kmalloc = %lu\n",pp_num);
-		pp_address = (struct pram_page *)kmalloc((sizeof(struct pram_page) * pp_num), GFP_HIGHUSER);
-		for(pp_count=0;pp_count<pp_num;pp_count++){
-			pp_address[pp_count].flags = PRAM_NONE;
-		}
-		pram_info("kmalloc\n");
-		unsigned long jbd_initsize = initsize/2 - 1;
-		unsigned long jbd_area_start = initsize/2 + 1 ;
-		unsigned long jbd_area_end = initsize;
+		unsigned long j_initsize = initsize - pram_initsize;
+		unsigned long j_area_start = j_initsize + 1 ;
+		unsigned long j_area_end = initsize;
 
 		root_pi = pram_init(sb, pram_initsize);
 
-		//kohga_hack
-		sbi->jbd_phys_addr = sbi->phys_addr + (u64)jbd_area_start;
-		pram_info("kohga; sbi->jbd_phys_addr = 0x%016llx \n",(u64)sbi->jbd_phys_addr);
+		pram_info("kohga; pram num pages are %lu\n",pram_num_pages);
+		pp_address = (struct pram_page *)kmalloc((sizeof(struct pram_page) * pram_num_pages), GFP_HIGHUSER);
+		for(pp_count=0; pp_count<pram_num_pages; pp_count++){
+			pp_address[pp_count].flags = PRAM_PAGE_NONE;
+		}
+		pram_info("kohga; kmalloc success!!!\n");
 
-		sbi->jbd_size = jbd_initsize;
-		pram_info("kohga; sbi->jbd_size = %lu \n",sbi->jbd_size);
-		pram_info("kohga; jbd_phys_addr End = 0x%016llx \n",(u64)sbi->jbd_phys_addr + (u64)jbd_initsize);
+		sbi->j_phys_addr = sbi->phys_addr + (u64)j_area_start;
+		pram_info("kohga; sbi->j_phys_addr = 0x%016llx \n",(u64)sbi->j_phys_addr);
 
-		//jbd_pi = jbd_init(sb, jbd_initsize); //kohga_hack
+		sbi->j_size = j_initsize;
+		pram_info("kohga; sbi->j_size = %lu \n",sbi->j_size);
+		pram_info("kohga; j_phys_addr End = 0x%016llx \n",(u64)sbi->j_phys_addr + (u64)j_initsize);
+
+		//j_pi = j_init(sb, j_initsize); //kohga_hack
 
 		if (IS_ERR(root_pi))
 			goto out;
 
 		//kohga_hack
-		//if (IS_ERR(jbd_pi)){
-		//	pram_info("kohga;jbd_pi: %x \n",jbd_pi);
+		//if (IS_ERR(j_pi)){
+		//	pram_info("kohga;j_pi: %x \n",j_pi);
 		//}
 
 		super = pram_get_super(sb);
@@ -875,7 +745,6 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		goto noinit;
 	}else{
 		pram_info("kohga; init!!! 2nd\n");
-		init_journal();
 	}
 
 	pram_info("kohga;pram_fill_super: return 0\n");
