@@ -102,7 +102,7 @@ do_xip_mapping_read(struct address_space *mapping,
 
 		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 			printk(KERN_DEBUG "mm/filemap_xip.c / do_xip_mapping_read\n");
-			if( inode->inode_pram_flags & PRAM_INODE_COPY ){
+			if( inode->inode_pram_flags & PRAM_INODE_SYNC ){
 				printk(KERN_DEBUG "mm/filemap_xip.c / COPY\n");
 				printk(KERN_DEBUG "g_pfn = %lu\n", g_pfn );
 				printk(KERN_DEBUG "g_mem = %lu\n", g_mem);
@@ -275,10 +275,9 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	struct page *page;
 	int error;
 
-	void *d1_mem;
-	void *d2_mem;
-	unsigned long d1_pfn;
-	unsigned long d2_pfn;
+	void *type1_mem, *type2_mem;
+	unsigned long type1_pfn, type2_pfn;
+	char page_flags;
 	int pgoff_num;
 	struct pram_atomic_file *paf_p;
 
@@ -293,41 +292,62 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 		if (vmf->pgoff >= size)
 			return VM_FAULT_SIGBUS;
 
-		if(inode->inode_pram_flags & PRAM_INODE_COPY ){
-			printk(KERN_DEBUG "a2 PRAM_INODE_COPY\n");
-			if(inode->inode_pram_flags & PRAM_INODE_SYNC ){
-				printk(KERN_DEBUG "a2 PRAM_INODE_SYNC\n");
-				error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0, &xip_mem, &xip_pfn);
-			}else{
-				printk(KERN_DEBUG "a2 Not PRAM_INODE_SYNC\n");
-				error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 1, &xip_mem, &xip_pfn);
-			}
-		}else{
-			printk(KERN_DEBUG "a2\n");
-			error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0, &d1_mem, &d1_pfn);
-			if ( !(likely(!error)) )
-				printk(KERN_DEBUG "ERROR 1!\n");
+		error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0, &type1_mem, &type1_pfn);
+		if (error)
+			printk(KERN_DEBUG "ERROR!\n");
 
-			printk(KERN_DEBUG "a3\n");
-			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 1, &d2_mem, &d2_pfn);
+		page_flags = pp_address[(type1_pfn - pp_offset)].flags;
+
+		if( page_flags & PRAM_PAGE_NONE ){
+			printk(KERN_DEBUG "STATE : NONE\n");
+			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 1, &type2_mem, &type2_pfn);
 			if (error)
-				printk(KERN_DEBUG "ERROR 2!\n");
+				printk(KERN_DEBUG "ERROR!\n");
 
-			printk(KERN_DEBUG "a4\n");
-			printk(KERN_DEBUG "a5; d1_mem = %lu\n", d1_mem);
-			printk(KERN_DEBUG "a5; origin_pfn = %lu\n", d1_pfn);
-			printk(KERN_DEBUG "a5; d2_mem = %lu\n", d2_mem);
-			printk(KERN_DEBUG "a5; shadow_pfn = %lu\n", d2_pfn);
-			printk(KERN_DEBUG "a5; s_blocksize = %lu\n", inode->i_sb->s_blocksize);
-			memcpy(d2_mem, d1_mem, inode->i_sb->s_blocksize);
+			inode->inode_pram_flags |= ~PRAM_INODE_NONE;
+			inode->inode_pram_flags |= ~PRAM_INODE_SYNC;
+			pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_NONE;
+			pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_COPY;
 
-			xip_pfn = d2_pfn;
-			xip_mem = d2_mem;
+			memcpy(type2_mem, type1_mem, inode->i_sb->s_blocksize);
+
+			xip_pfn = type2_pfn;
+			xip_mem = type2_mem;
 			g_pfn = xip_pfn;
 			g_mem = xip_mem;
 
-			printk(KERN_DEBUG "a6\n");
-			inode->inode_pram_flags |= PRAM_INODE_COPY;
+			inode->inode_pram_flags |= PRAM_INODE_SYNC; //dummy!!
+
+		}else if( (!(inode->inode_pram_flags & PRAM_INODE_SYNC)) && (!(page_flags & PRAM_PAGE_COPY)) ){
+			printk(KERN_DEBUG "STATE : F,F\n");
+			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 0, &type2_mem, &type2_pfn);
+			memcpy(type2_mem, type1_mem, inode->i_sb->s_blocksize);
+			xip_pfn = type2_pfn;
+			xip_mem = type2_mem;
+
+			pp_address[(type1_pfn - pp_offset)].flags |= PRAM_PAGE_COPY;
+
+		}else if( (!(inode->inode_pram_flags & PRAM_INODE_SYNC)) && (page_flags & PRAM_PAGE_COPY)){
+			printk(KERN_DEBUG "STATE : T,F\n");
+			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 0, &type2_mem, &type2_pfn);
+			xip_pfn = type2_pfn;
+			xip_mem = type2_mem;
+
+		}else if((inode->inode_pram_flags & PRAM_INODE_SYNC) && (page_flags & PRAM_PAGE_COPY)){
+			printk(KERN_DEBUG "STATE : T,T\n");
+			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 0, &type2_mem, &type2_pfn);
+			//error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0, &type1_mem, &type1_pfn);
+			memcpy(type1_mem, type2_mem, inode->i_sb->s_blocksize);
+			xip_pfn = type1_pfn;
+			xip_mem = type1_mem;
+
+			pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_COPY;
+
+		}else if((inode->inode_pram_flags & PRAM_INODE_SYNC) && (!(page_flags & PRAM_PAGE_COPY))){
+			printk(KERN_DEBUG "STATE : F,T\n");
+			//error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0, &type1_mem, &type1_pfn);
+			xip_pfn = type1_pfn;
+			xip_mem = type1_mem;
 		}
 
 		printk(KERN_DEBUG "a6\n");

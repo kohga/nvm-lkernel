@@ -604,7 +604,7 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		pram_info("kohga; pram num pages are %lu\n",pram_num_pages);
 		pp_address = (struct pram_page *)kmalloc((sizeof(struct pram_page) * pram_num_pages), GFP_HIGHUSER);
 		for(pp_count=0; pp_count<pram_num_pages; pp_count++){
-			pp_address[pp_count].flags = PRAM_PAGE_NONE;
+			pp_address[pp_count].flags |= PRAM_PAGE_NONE;
 		}
 		pram_info("kohga; kmalloc success!!!\n");
 

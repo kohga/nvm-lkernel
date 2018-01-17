@@ -29,13 +29,11 @@ extern int pram_pgoff;
 
 /* inode flags (kohga add) */
 #define PRAM_INODE_NONE 0x0001
-#define PRAM_INODE_SYNC 0x0001
-#define PRAM_INODE_COPY 0x0002
+#define PRAM_INODE_SYNC 0x0002
 
 /* pram page flags (kohga add) */
 #define PRAM_PAGE_NONE 0x01
-#define PRAM_PAGE_ORIGIN 0x02
-#define PRAM_PAGE_SHADOW 0x04
+#define PRAM_PAGE_COPY 0x02
 
 struct pram_page{
 	char flags;
