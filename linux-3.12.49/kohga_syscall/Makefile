@@ -1,1 +1,1 @@
-obj-y := kohga_syscall.o commit_syscall.o
+obj-y := kohga_syscall.o nvmsync.o

@@ -53,6 +53,16 @@
 #define arch_rebalance_pgtables(addr, len)		(addr)
 #endif
 
+
+struct inode *get_pram_inode(unsigned long fd){
+	struct file *file = NULL;
+	struct inode *inode = NULL;
+
+	file = fget(fd);
+	inode = file_inode(file);
+	return inode;
+}
+
 static void unmap_region(struct mm_struct *mm,
 		struct vm_area_struct *vma, struct vm_area_struct *prev,
 		unsigned long start, unsigned long end);

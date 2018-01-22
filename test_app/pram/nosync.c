@@ -72,12 +72,14 @@ int main(){
 		strcpy(ptr,buf);
 	}
 
+	/*
 	if( syscall(nvmsync, buf_sys, fd) < 0 ){
 		perror("syscall; nvmsync");
 		exit(400);
 	}else{
 		//printf( "buf = %s\n", buf_sys );
 	}
+	*/
 
 	if(munmap(ptr,size)==-1){
 		perror("munmap");

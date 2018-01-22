@@ -12,6 +12,7 @@ cp: mmpram mmtxtpram
 	cp mlu2 workspace/
 	cp mtxt workspace/
 	cp mtxt_cow workspace/
+	cp nosync workspace/
 
 workspace/extwork:
 	ln -sv /usr/src/nvm-lkernel/test_app/ext/workspace workspace/extwork

@@ -58,7 +58,6 @@ extern struct pram_page *pp_address;
 extern int pram_pgoff;
 extern int j_page_num;
 
-
 /* Function Prototypes */
 extern void pram_error_mng(struct super_block *sb, const char *fmt, ...);
 
@@ -74,6 +73,11 @@ extern void pram_free_block(struct super_block *sb, unsigned long blocknr);
 extern int pram_new_block(struct super_block *sb, unsigned long *blocknr,
 			  int zero);
 extern unsigned long pram_count_free_blocks(struct super_block *sb);
+
+extern int pjournal_srecord_sync(struct inode *inode);
+extern int pjournal_srecord_commit(struct inode *inode);
+extern int pjournal_crecord(struct inode *inode, pgoff_t pgoff);
+
 
 /* dir.c */
 extern int pram_add_link(struct dentry *dentry, struct inode *inode);

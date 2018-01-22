@@ -4,9 +4,9 @@
 SYSCALL_DEFINE2( kohga_syscall, char __user *, buf, int, count )
 {
 	long err;
-	char text[ ] = "Kohga hacked!";
+	char text[ ] = "Kohga hacked.";
 
-	printk( "<KOHGA SYSCALL>%s\n", text );
+	printk( "<KOHGA SYSCALL> %s\n", text );
 
 	if( count < sizeof( text ) )
 	{

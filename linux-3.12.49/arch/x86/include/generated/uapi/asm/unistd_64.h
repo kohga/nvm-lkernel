@@ -316,6 +316,6 @@
 #define __NR_kcmp 312
 #define __NR_finit_module 313
 #define __NR_sys_kohga_syscall 314
-#define __NR_sys_commit_syscall 315
+#define __NR_sys_nvmsync 315
 
 #endif /* _ASM_X86_UNISTD_64_H */

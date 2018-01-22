@@ -102,8 +102,11 @@ do_xip_mapping_read(struct address_space *mapping,
 
 		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 			printk(KERN_DEBUG "mm/filemap_xip.c / do_xip_mapping_read\n");
+			printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
+			printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
+
 			if( inode->inode_pram_flags & PRAM_INODE_SYNC ){
-				printk(KERN_DEBUG "mm/filemap_xip.c / COPY\n");
+				printk(KERN_DEBUG "mm/filemap_xip.c / SYNC\n");
 				printk(KERN_DEBUG "g_pfn = %lu\n", g_pfn );
 				printk(KERN_DEBUG "g_mem = %lu\n", g_mem);
 				printk(KERN_DEBUG "index = %lu\n", index);
@@ -297,6 +300,9 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			printk(KERN_DEBUG "ERROR!\n");
 
 		page_flags = pp_address[(type1_pfn - pp_offset)].flags;
+		printk(KERN_DEBUG " page_flags = %lu\n" ,pp_address[(type1_pfn - pp_offset)].flags);
+		printk(KERN_DEBUG " type1_pfn = %lu\n" ,type1_pfn);
+		printk(KERN_DEBUG " pp_offset = %lu\n" ,pp_offset);
 
 		if( page_flags & PRAM_PAGE_NONE ){
 			printk(KERN_DEBUG "STATE : NONE\n");
@@ -304,10 +310,25 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			if (error)
 				printk(KERN_DEBUG "ERROR!\n");
 
-			inode->inode_pram_flags |= ~PRAM_INODE_NONE;
-			inode->inode_pram_flags |= ~PRAM_INODE_SYNC;
-			pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_NONE;
-			pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_COPY;
+			printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
+			printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
+
+			if(inode->inode_pram_flags & PRAM_INODE_NONE ){
+				inode->inode_pram_flags |= ~PRAM_INODE_NONE;
+			}
+			if(inode->inode_pram_flags & PRAM_INODE_SYNC ){
+				inode->inode_pram_flags |= ~PRAM_INODE_SYNC;
+			}
+			if( pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_NONE ){
+				printk(KERN_DEBUG "NONE->!NONE\n");
+				//pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_NONE;
+				pp_address[(type1_pfn - pp_offset)].flags = 0;
+			}
+			if(!(pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_COPY)){
+				printk(KERN_DEBUG "!COPY->COPY\n");
+				//pp_address[(type1_pfn - pp_offset)].flags |= PRAM_PAGE_COPY;
+				pp_address[(type1_pfn - pp_offset)].flags = PRAM_PAGE_COPY;
+			}
 
 			memcpy(type2_mem, type1_mem, inode->i_sb->s_blocksize);
 
@@ -316,8 +337,6 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			g_pfn = xip_pfn;
 			g_mem = xip_mem;
 
-			inode->inode_pram_flags |= PRAM_INODE_SYNC; //dummy!!
-
 		}else if( (!(inode->inode_pram_flags & PRAM_INODE_SYNC)) && (!(page_flags & PRAM_PAGE_COPY)) ){
 			printk(KERN_DEBUG "STATE : F,F\n");
 			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 0, &type2_mem, &type2_pfn);
@@ -325,7 +344,11 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			xip_pfn = type2_pfn;
 			xip_mem = type2_mem;
 
-			pp_address[(type1_pfn - pp_offset)].flags |= PRAM_PAGE_COPY;
+			if(!(pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_COPY)){
+				printk(KERN_DEBUG "!COPY->COPY\n");
+				//pp_address[(type1_pfn - pp_offset)].flags |= PRAM_PAGE_COPY;
+				pp_address[(type1_pfn - pp_offset)].flags = PRAM_PAGE_COPY;
+			}
 
 		}else if( (!(inode->inode_pram_flags & PRAM_INODE_SYNC)) && (page_flags & PRAM_PAGE_COPY)){
 			printk(KERN_DEBUG "STATE : T,F\n");
@@ -341,7 +364,11 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			xip_pfn = type1_pfn;
 			xip_mem = type1_mem;
 
-			pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_COPY;
+			if(pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_COPY){
+				printk(KERN_DEBUG "COPY->!COPY\n");
+				//pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_COPY;
+				pp_address[(type1_pfn - pp_offset)].flags = 0;
+			}
 
 		}else if((inode->inode_pram_flags & PRAM_INODE_SYNC) && (!(page_flags & PRAM_PAGE_COPY))){
 			printk(KERN_DEBUG "STATE : F,T\n");
@@ -359,6 +386,12 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 		}
 		if (err != -EBUSY)
 			BUG_ON(err);
+
+		printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
+		printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
+		printk(KERN_DEBUG " page_flags = %lu\n" ,pp_address[(type1_pfn - pp_offset)].flags);
+		printk(KERN_DEBUG " type1_pfn = %lu\n" ,type1_pfn);
+		printk(KERN_DEBUG " pp_offset = %lu\n" ,pp_offset);
 
 		printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 05; return VM_FAULT_NOPAGE;\n");
 		return VM_FAULT_NOPAGE;

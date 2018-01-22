@@ -115,5 +115,6 @@ mluext
 mlu1
 mlu2
 mtxt
+nosync
 test_file
 workspace/*

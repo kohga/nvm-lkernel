@@ -321,7 +321,7 @@
 312	common	kcmp			sys_kcmp
 313	common	finit_module		sys_finit_module
 314	common	sys_kohga_syscall	sys_kohga_syscall
-315	common	sys_commit_syscall	sys_commit_syscall
+315	common	sys_nvmsync			sys_nvmsync
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact

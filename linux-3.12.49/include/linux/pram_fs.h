@@ -24,6 +24,13 @@ extern int pram_xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 extern unsigned long pp_offset;
 extern struct pram_page *pp_address;
 extern int pram_pgoff;
+extern int pjournal_srecord_sync(struct inode *inode);
+extern int pjournal_srecord_commit(struct inode *inode);
+extern int pjournal_crecord(struct inode *inode, pgoff_t pgoff);
+
+
+// kohga add (mm/mmap.c -> intarnal.h)
+extern struct inode *get_pram_inode(unsigned long fd);
 
 #define PRAM_PAGE_SIZE 4096
 
