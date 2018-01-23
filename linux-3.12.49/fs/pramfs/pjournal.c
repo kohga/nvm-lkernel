@@ -3,6 +3,9 @@
 #include <linux/slab.h>
 #include "pram.h"
 
+#define mb() asm volatile ("mfence":::"memory")
+
+
 unsigned long cur_j_num = 0;
 
 // need spi_lock();
@@ -24,7 +27,10 @@ int pjournal_srecord_sync(struct inode *inode){
 	memcpy(pj_super.cur_addr, &pj_f, sizeof(struct pj_footer));
 	pj_super.cur_addr += sizeof(struct pj_footer);
 
+	mb();
 	memcpy(pj_super.start_addr, &pj_super, sizeof(struct pj_super));
+	clflush_cache_range(pj_super.start_addr, sizeof(struct pj_super));
+	mb();
 
 	return 0;
 }
@@ -46,7 +52,10 @@ int pjournal_srecord_commit(struct inode *inode){
 	memcpy(pj_super.cur_addr, &pj_f, sizeof(struct pj_footer));
 	pj_super.cur_addr += sizeof(struct pj_footer);
 
+	mb();
 	memcpy(pj_super.start_addr, &pj_super, sizeof(struct pj_super));
+	clflush_cache_range(pj_super.start_addr, sizeof(struct pj_super));
+	mb();
 
 	return 0;
 }
@@ -71,7 +80,10 @@ int pjournal_crecord(struct inode *inode, pgoff_t aside_pgoff, pgoff_t bside_pgo
 	memcpy(pj_super.cur_addr, &pj_f, sizeof(struct pj_footer));
 	pj_super.cur_addr += sizeof(struct pj_footer);
 
+	mb();
 	memcpy(pj_super.start_addr, &pj_super, sizeof(struct pj_super));
+	clflush_cache_range(pj_super.start_addr, sizeof(struct pj_super));
+	mb();
 
 	return 0;
 }
