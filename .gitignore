@@ -116,5 +116,6 @@ mlu1
 mlu2
 mtxt
 nosync
+noatomic
 test_file
 workspace/*

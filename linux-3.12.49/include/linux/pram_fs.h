@@ -16,6 +16,7 @@
 #define _LINUX_PRAM_FS_H
 
 #include <uapi/linux/pram_fs.h>
+#include <linux/fs.h>
 
 /* kohga add for filemap_xip */
 extern int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
@@ -26,7 +27,8 @@ extern struct pram_page *pp_address;
 extern int pram_pgoff;
 extern int pjournal_srecord_sync(struct inode *inode);
 extern int pjournal_srecord_commit(struct inode *inode);
-extern int pjournal_crecord(struct inode *inode, pgoff_t pgoff);
+extern int pjournal_crecord(struct inode *inode, pgoff_t aside_pgoff, pgoff_t bside_pgoff , void *aside_mem, void *bside_mem);
+
 
 
 // kohga add (mm/mmap.c -> intarnal.h)
@@ -44,6 +46,32 @@ extern struct inode *get_pram_inode(unsigned long fd);
 
 struct pram_page{
 	char flags;
+};
+
+
+struct pj_super{
+	unsigned long initsize;
+	void *start_addr;
+	void *cur_addr;
+};
+
+struct pj_footer{
+	char type; //1:srecord, 2:crecord
+};
+
+struct pj_srecord{
+	unsigned long j_num;
+	char status; //1:sync, 2:commit
+	struct inode inode;
+};
+
+struct pj_crecord{
+	unsigned long j_num;
+	struct inode inode;
+	pgoff_t aside_pgoff;
+	pgoff_t bside_pgoff;
+	void *aside_mem;
+	void *bside_mem;
 };
 
 /*
@@ -75,6 +103,10 @@ struct pram_sb_info {
 	struct mutex s_lock;
 
 	/* Journaling */
+	unsigned long j_initsize;
+	phys_addr_t j_phys_addr;
+	void *j_virt_addr;
+#if 0
 	phys_addr_t j_phys_addr;
 	unsigned long j_size;
 
@@ -90,6 +122,6 @@ struct pram_sb_info {
 	char *s_qf_names[MAXQUOTAS];		/* Names of quota files with journalled quota */
 	int s_jquota_fmt;			/* Format of quota to use */
 #endif
-
+#endif
 };
 #endif	/* _LINUX_PRAM_FS_H */

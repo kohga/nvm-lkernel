@@ -57,6 +57,7 @@ extern unsigned long pp_offset;
 extern struct pram_page *pp_address;
 extern int pram_pgoff;
 extern int j_page_num;
+extern struct pj_super pj_super;
 
 /* Function Prototypes */
 extern void pram_error_mng(struct super_block *sb, const char *fmt, ...);
@@ -76,7 +77,7 @@ extern unsigned long pram_count_free_blocks(struct super_block *sb);
 
 extern int pjournal_srecord_sync(struct inode *inode);
 extern int pjournal_srecord_commit(struct inode *inode);
-extern int pjournal_crecord(struct inode *inode, pgoff_t pgoff);
+extern int pjournal_crecord(struct inode *inode, pgoff_t aside_pgoff, pgoff_t bside_pgoff , void *aside_mem, void *bside_mem);
 
 
 /* dir.c */

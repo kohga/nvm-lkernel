@@ -313,6 +313,8 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
 			printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
 
+			pjournal_crecord(inode, type1_pfn, type2_pfn, type1_mem, type2_mem);
+
 			if(inode->inode_pram_flags & PRAM_INODE_NONE ){
 				inode->inode_pram_flags |= ~PRAM_INODE_NONE;
 			}

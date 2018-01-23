@@ -35,6 +35,9 @@
 #include "xattr.h"
 #include "pram.h"
 
+// kohga add
+struct pj_super pj_super;
+
 static struct super_operations pram_sops;
 static const struct export_operations pram_export_ops;
 static struct kmem_cache *pram_inode_cachep;
@@ -595,9 +598,9 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		//unsigned long pram_initsize = initsize/2;
 		unsigned long pram_initsize = initsize-(PRAM_PAGE_SIZE*j_page_num);
 		unsigned long pp_count = 0;
-		unsigned long j_initsize = initsize - pram_initsize;
-		unsigned long j_area_start = j_initsize + 1 ;
-		unsigned long j_area_end = initsize;
+
+		sbi->j_initsize = initsize - pram_initsize;
+		sbi->j_phys_addr = sbi->phys_addr + (u64)pram_initsize + 1;
 
 		root_pi = pram_init(sb, pram_initsize);
 
@@ -608,24 +611,21 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		}
 		pram_info("kohga; kmalloc success!!!\n");
 
-		sbi->j_phys_addr = sbi->phys_addr + (u64)j_area_start;
-		pram_info("kohga; sbi->j_phys_addr = 0x%016llx \n",(u64)sbi->j_phys_addr);
-
-		sbi->j_size = j_initsize;
-		pram_info("kohga; sbi->j_size = %lu \n",sbi->j_size);
-		pram_info("kohga; j_phys_addr End = 0x%016llx \n",(u64)sbi->j_phys_addr + (u64)j_initsize);
-
-		//j_pi = j_init(sb, j_initsize); //kohga_hack
-
 		if (IS_ERR(root_pi))
 			goto out;
 
-		//kohga_hack
-		//if (IS_ERR(j_pi)){
-		//	pram_info("kohga;j_pi: %x \n",j_pi);
-		//}
-
 		super = pram_get_super(sb);
+
+		pram_info("kohga; memcpy start; pre\n");
+		sbi->j_virt_addr = pram_ioremap(sbi->j_phys_addr, sbi->j_initsize ,1);
+
+		pj_super.initsize = sbi->j_initsize;
+		pj_super.start_addr = sbi->j_virt_addr;
+		pj_super.cur_addr = sbi->j_virt_addr + sizeof(struct pj_super);
+
+		pram_info("kohga; memcpy start\n");
+		memcpy(pj_super.start_addr, &pj_super, sizeof(struct pj_super));
+		pram_info("kohga; memcpy end\n");
 
 		pram_info("kohga;pram_fill_super: goto setup_sb\n");
 		goto setup_sb;
