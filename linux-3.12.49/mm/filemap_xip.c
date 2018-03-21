@@ -101,18 +101,18 @@ do_xip_mapping_read(struct address_space *mapping,
 			nr = len - copied;
 
 		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
-			printk(KERN_DEBUG "mm/filemap_xip.c / do_xip_mapping_read\n");
-			printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
-			printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
+			//printk(KERN_DEBUG "mm/filemap_xip.c / do_xip_mapping_read\n");
+			//printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
+			//printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
 
 			if( inode->inode_pram_flags & PRAM_INODE_SYNC ){
-				printk(KERN_DEBUG "mm/filemap_xip.c / SYNC\n");
-				printk(KERN_DEBUG "g_pfn = %lu\n", g_pfn );
-				printk(KERN_DEBUG "g_mem = %lu\n", g_mem);
-				printk(KERN_DEBUG "index = %lu\n", index);
+				//printk(KERN_DEBUG "mm/filemap_xip.c / SYNC\n");
+				//printk(KERN_DEBUG "g_pfn = %lu\n", g_pfn );
+				//printk(KERN_DEBUG "g_mem = %lu\n", g_mem);
+				//printk(KERN_DEBUG "index = %lu\n", index);
 				error = mapping->a_ops->get_xip_mem(mapping, (index + pram_pgoff), 0, &xip_mem, &xip_pfn);
-				printk(KERN_DEBUG "xip_pfn = %lu\n", xip_pfn );
-				printk(KERN_DEBUG "xip_mem = %lu\n", xip_mem);
+				//printk(KERN_DEBUG "xip_pfn = %lu\n", xip_pfn );
+				//printk(KERN_DEBUG "xip_mem = %lu\n", xip_mem);
 				goto pram_atomic_found;
 			}else{
 				error = mapping->a_ops->get_xip_mem(mapping, index, 0, &xip_mem, &xip_pfn);
@@ -122,13 +122,15 @@ do_xip_mapping_read(struct address_space *mapping,
 		}
 
 		if (unlikely(error)) {
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "b1\n");
-			}
+			}*/
 			if (error == -ENODATA) {
+				/*
 				if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 					printk(KERN_DEBUG "b2\n");
-				}
+				}*/
 				/* sparse */
 				zero = 1;
 			} else
@@ -152,17 +154,19 @@ pram_atomic_found:
 		 * pointers and the remaining count).
 		 */
 		if (!zero){
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "b3\n");
-			}
+			}*/
 			left = __copy_to_user(buf+copied, xip_mem+offset, nr);
 		}else
 			left = __clear_user(buf + copied, nr);
 
 		if (left) {
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "b4\n");
-			}
+			}*/
 			error = -EFAULT;
 			goto out;
 		}
@@ -171,22 +175,28 @@ pram_atomic_found:
 		offset += (nr - left);
 		index += offset >> PAGE_CACHE_SHIFT;
 		offset &= ~PAGE_CACHE_MASK;
+		/*
 		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 			printk(KERN_DEBUG "b5\n");
 		}
+		*/
 	} while (copied < len);
 
 out:
 	*ppos = pos + copied;
 	if (filp){
+		/*
 		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 			printk(KERN_DEBUG "b6\n");
 		}
+		*/
 		file_accessed(filp);
 	}
+	/*
 	if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 		printk(KERN_DEBUG "b7\n");
 	}
+	*/
 
 	return (copied ? copied : error);
 }
@@ -286,7 +296,7 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 
 	// kohga add
 	if( vma->vma_pram_flags & VM_PRAM_ATOMIC ){
-		printk(KERN_DEBUG "a1 VM_PRAM_ATOMIC\n");
+		//printk(KERN_DEBUG "a1 VM_PRAM_ATOMIC\n");
 		vma->vma_pram_flags |= ~VM_PRAM_ATOMIC;
 		pgoff_num = (int)vmf->pgoff;
 		size = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
@@ -300,18 +310,18 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			printk(KERN_DEBUG "ERROR!\n");
 
 		page_flags = pp_address[(type1_pfn - pp_offset)].flags;
-		printk(KERN_DEBUG " page_flags = %lu\n" ,pp_address[(type1_pfn - pp_offset)].flags);
-		printk(KERN_DEBUG " type1_pfn = %lu\n" ,type1_pfn);
-		printk(KERN_DEBUG " pp_offset = %lu\n" ,pp_offset);
+		//printk(KERN_DEBUG " page_flags = %lu\n" ,pp_address[(type1_pfn - pp_offset)].flags);
+		//printk(KERN_DEBUG " type1_pfn = %lu\n" ,type1_pfn);
+		//printk(KERN_DEBUG " pp_offset = %lu\n" ,pp_offset);
 
 		if( page_flags & PRAM_PAGE_NONE ){
-			printk(KERN_DEBUG "STATE : NONE\n");
+			//printk(KERN_DEBUG "STATE : NONE\n");
 			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 1, &type2_mem, &type2_pfn);
 			if (error)
 				printk(KERN_DEBUG "ERROR!\n");
 
-			printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
-			printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
+			//printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
+			//printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
 
 			pjournal_crecord(inode, type1_pfn, type2_pfn, type1_mem, type2_mem);
 
@@ -322,12 +332,12 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 				inode->inode_pram_flags |= ~PRAM_INODE_SYNC;
 			}
 			if( pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_NONE ){
-				printk(KERN_DEBUG "NONE->!NONE\n");
+				//printk(KERN_DEBUG "NONE->!NONE\n");
 				//pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_NONE;
 				pp_address[(type1_pfn - pp_offset)].flags = 0;
 			}
 			if(!(pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_COPY)){
-				printk(KERN_DEBUG "!COPY->COPY\n");
+				//printk(KERN_DEBUG "!COPY->COPY\n");
 				//pp_address[(type1_pfn - pp_offset)].flags |= PRAM_PAGE_COPY;
 				pp_address[(type1_pfn - pp_offset)].flags = PRAM_PAGE_COPY;
 			}
@@ -340,26 +350,26 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			g_mem = xip_mem;
 
 		}else if( (!(inode->inode_pram_flags & PRAM_INODE_SYNC)) && (!(page_flags & PRAM_PAGE_COPY)) ){
-			printk(KERN_DEBUG "STATE : F,F\n");
+			//printk(KERN_DEBUG "STATE : F,F\n");
 			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 0, &type2_mem, &type2_pfn);
 			memcpy(type2_mem, type1_mem, inode->i_sb->s_blocksize);
 			xip_pfn = type2_pfn;
 			xip_mem = type2_mem;
 
 			if(!(pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_COPY)){
-				printk(KERN_DEBUG "!COPY->COPY\n");
+				//printk(KERN_DEBUG "!COPY->COPY\n");
 				//pp_address[(type1_pfn - pp_offset)].flags |= PRAM_PAGE_COPY;
 				pp_address[(type1_pfn - pp_offset)].flags = PRAM_PAGE_COPY;
 			}
 
 		}else if( (!(inode->inode_pram_flags & PRAM_INODE_SYNC)) && (page_flags & PRAM_PAGE_COPY)){
-			printk(KERN_DEBUG "STATE : T,F\n");
+			//printk(KERN_DEBUG "STATE : T,F\n");
 			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 0, &type2_mem, &type2_pfn);
 			xip_pfn = type2_pfn;
 			xip_mem = type2_mem;
 
 		}else if((inode->inode_pram_flags & PRAM_INODE_SYNC) && (page_flags & PRAM_PAGE_COPY)){
-			printk(KERN_DEBUG "STATE : T,T\n");
+			//printk(KERN_DEBUG "STATE : T,T\n");
 			error = mapping->a_ops->get_xip_mem(mapping, (vmf->pgoff + pram_pgoff), 0, &type2_mem, &type2_pfn);
 			//error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0, &type1_mem, &type1_pfn);
 			memcpy(type1_mem, type2_mem, inode->i_sb->s_blocksize);
@@ -367,35 +377,35 @@ int xip_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			xip_mem = type1_mem;
 
 			if(pp_address[(type1_pfn - pp_offset)].flags & PRAM_PAGE_COPY){
-				printk(KERN_DEBUG "COPY->!COPY\n");
+				//printk(KERN_DEBUG "COPY->!COPY\n");
 				//pp_address[(type1_pfn - pp_offset)].flags |= ~PRAM_PAGE_COPY;
 				pp_address[(type1_pfn - pp_offset)].flags = 0;
 			}
 
 		}else if((inode->inode_pram_flags & PRAM_INODE_SYNC) && (!(page_flags & PRAM_PAGE_COPY))){
-			printk(KERN_DEBUG "STATE : F,T\n");
+			//printk(KERN_DEBUG "STATE : F,T\n");
 			//error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0, &type1_mem, &type1_pfn);
 			xip_pfn = type1_pfn;
 			xip_mem = type1_mem;
 		}
 
-		printk(KERN_DEBUG "a6\n");
+		//printk(KERN_DEBUG "a6\n");
 		err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address, xip_pfn);
-		printk(KERN_DEBUG "a7\n");
+		//printk(KERN_DEBUG "a7\n");
 		if (err == -ENOMEM){
-			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 04; return VM_FAULT_OOM;\n");
+			//printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 04; return VM_FAULT_OOM;\n");
 			return VM_FAULT_OOM;
 		}
 		if (err != -EBUSY)
 			BUG_ON(err);
 
-		printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
-		printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
-		printk(KERN_DEBUG " page_flags = %lu\n" ,pp_address[(type1_pfn - pp_offset)].flags);
-		printk(KERN_DEBUG " type1_pfn = %lu\n" ,type1_pfn);
-		printk(KERN_DEBUG " pp_offset = %lu\n" ,pp_offset);
+		//printk(KERN_DEBUG "*** inode->i_ino = %lu\n" ,inode->i_ino);
+		//printk(KERN_DEBUG "*** inode->inode_pram_flags = %lu\n" ,inode->inode_pram_flags);
+		//printk(KERN_DEBUG " page_flags = %lu\n" ,pp_address[(type1_pfn - pp_offset)].flags);
+		//printk(KERN_DEBUG " type1_pfn = %lu\n" ,type1_pfn);
+		//printk(KERN_DEBUG " pp_offset = %lu\n" ,pp_offset);
 
-		printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 05; return VM_FAULT_NOPAGE;\n");
+		//printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 05; return VM_FAULT_NOPAGE;\n");
 		return VM_FAULT_NOPAGE;
 
 	}else{
@@ -405,24 +415,30 @@ again:
 		if (vmf->pgoff >= size)
 			return VM_FAULT_SIGBUS;
 
+		/*
 		if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 			printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:\n");
 		}
+		*/
 
 		error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0,
 				&xip_mem, &xip_pfn);
 
 		if (likely(!error)){
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:01; goto found;\n");
 			}
+			*/
 
 			goto found;
 		}
 		if (error != -ENODATA){
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:02; return VM_FAULT_OOM;\n");
 			}
+			*/
 			return VM_FAULT_OOM;
 		}
 
@@ -440,9 +456,11 @@ again:
 
 			mutex_unlock(&xip_sparse_mutex);
 			if (error){
+				/*
 				if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 					printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; again:03; return VM_FAULT_SIGBUS;\n");
 				}
+				*/
 				return VM_FAULT_SIGBUS;
 			}
 			/* unmap sparse mappings at pgoff from all other vmas */
@@ -452,9 +470,11 @@ found:
 			err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address,
 					xip_pfn);
 			if (err == -ENOMEM){
+				/*
 				if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 					printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 04; return VM_FAULT_OOM;\n");
 				}
+				*/
 				return VM_FAULT_OOM;
 			}
 			/*
@@ -464,51 +484,62 @@ found:
 			if (err != -EBUSY)
 				BUG_ON(err);
 
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 05; return VM_FAULT_NOPAGE;\n");
 			}
+			*/
 			return VM_FAULT_NOPAGE;
 		} else {
 			int err, ret = VM_FAULT_OOM;
 
 			mutex_lock(&xip_sparse_mutex);
-
 			write_seqcount_begin(&xip_sparse_seq);
 
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; found:\n");
 			}
+			*/
 
 			error = mapping->a_ops->get_xip_mem(mapping, vmf->pgoff, 0,
 					&xip_mem, &xip_pfn);
 			if (unlikely(!error)) {
 				write_seqcount_end(&xip_sparse_seq);
 				mutex_unlock(&xip_sparse_mutex);
+				/*
 				if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 					printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 06; goto again;\n");
 				}
+				*/
 				goto again;
 			}
 			if (error != -ENODATA){
+				/*
 				if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 					printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 07; goto out;\n");
 				}
+				*/
 				goto out;
 			}
 			/* not shared and writable, use xip_sparse_page() */
 			page = xip_sparse_page();
 			if (!page){
+				/*
 				if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 					printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 08; goto out;\n");
 				}
+				*/
 				goto out;
 			}
 			err = vm_insert_page(vma, (unsigned long)vmf->virtual_address,
 					page);
 			if (err == -ENOMEM){
+				/*
 				if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 					printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 09; goto out;\n");
 				}
+				*/
 				goto out;
 			}
 
@@ -517,9 +548,11 @@ out:
 			write_seqcount_end(&xip_sparse_seq);
 			mutex_unlock(&xip_sparse_mutex);
 
+			/*
 			if (mapping->a_ops->get_xip_mem == pram_get_xip_mem){
 				printk(KERN_DEBUG "mm/filemap_xip.c / xip_file_fault; 10; return ret;\n");
 			}
+			*/
 
 			return ret;
 		}

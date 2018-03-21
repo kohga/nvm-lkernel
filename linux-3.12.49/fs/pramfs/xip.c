@@ -135,26 +135,26 @@ int pram_get_xip_mem(struct address_space *mapping, pgoff_t pgoff, int create,
 		     void **kmem, unsigned long *pfn)
 {
 	pram_info("xip.c / pram_get_xip_mem\n");
-	pram_info("\n---Start VFS---\n");
+	//pram_info("\n---Start VFS---\n");
 	int rc;
 	sector_t block = 0;
-	pram_info("mapping->host = %x\n", mapping->host);
-	pram_info("pgoff = %d\n", pgoff);
+	//pram_info("mapping->host = %x\n", mapping->host);
+	//pram_info("pgoff = %d\n", pgoff);
 
 	/* first, retrieve the block */
 	rc = __pram_get_block(mapping->host, pgoff, create, &block);
 	if (rc){
-		pram_info("goto exit;\n");
+		//pram_info("goto exit;\n");
 		goto exit;
 	}
 
 	*kmem = pram_get_block(mapping->host->i_sb, block);
 	*pfn =  pram_get_pfn(mapping->host->i_sb, block);
 
-	pram_info("block = %x\n", block);
-	pram_info("*kmem = %lu\n", *kmem);
-	pram_info("*pfn = %lu\n", *pfn);
-	pram_info("\n--- End  VFS---\n");
+	//pram_info("block = %x\n", block);
+	//pram_info("*kmem = %lu\n", *kmem);
+	//pram_info("*pfn = %lu\n", *pfn);
+	//pram_info("\n--- End  VFS---\n");
 
 exit:
 	return rc;
